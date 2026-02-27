@@ -2,11 +2,7 @@ import { PrismaClient } from "@prisma/client"
 
 const prismaClientSingleton = () => {
     return new PrismaClient({
-        datasources: {
-            db: {
-                url: process.env.DATABASE_URL || "postgresql://not-set-for-build:6543/db"
-            }
-        }
+        datasourceUrl: process.env.DATABASE_URL || "postgresql://not-set-for-build:6543/db"
     })
 }
 
