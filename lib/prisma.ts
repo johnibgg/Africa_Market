@@ -1,15 +1,20 @@
 import { PrismaClient } from "@prisma/client"
+import { PrismaPg } from "@prisma/adapter-pg"
+import pg from "pg"
 
 const prismaClientSingleton = () => {
-    // During Vercel build (Collecting page data), DATABASE_URL might be missing.
-    // Providing a dummy URL prevents the Prisma constructor from throwing an error.
-    const url = process.env.DATABASE_URL || "postgresql://not-set:not-set@localhost:5432/db"
+    // Determine the connection string
+    const connectionString = process.env.DATABASE_URL
 
-    return new PrismaClient({
-        datasources: {
-            db: { url }
-        }
-    })
+    // In production (Vercel Build), if connectionString is missing, we use a placeholder 
+    // to avoid adapter initialization errors, although it won't be used for real queries.
+    if (!connectionString || process.env.NEXT_PHASE === 'phase-production-build') {
+        return new PrismaClient()
+    }
+
+    const pool = new pg.Pool({ connectionString })
+    const adapter = new PrismaPg(pool)
+    return new PrismaClient({ adapter })
 }
 
 declare global {
