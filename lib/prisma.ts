@@ -1,7 +1,16 @@
 import { PrismaClient } from "@prisma/client"
+import { PrismaPg } from "@prisma/adapter-pg"
+import pg from "pg"
 
 const prismaClientSingleton = () => {
-    return new PrismaClient()
+    // Dans Prisma 7, si l'URL n'est plus dans le schema.prisma, 
+    // on DOIT utiliser un adaptateur ou passer l'URL ici.
+    const connectionString = process.env.DATABASE_URL || "postgresql://not-set:not-set@localhost:5432/db"
+
+    const pool = new pg.Pool({ connectionString })
+    const adapter = new PrismaPg(pool)
+
+    return new PrismaClient({ adapter })
 }
 
 declare global {
