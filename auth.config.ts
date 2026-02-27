@@ -1,36 +1,14 @@
 import type { NextAuthConfig } from "next-auth"
 import Credentials from "next-auth/providers/credentials"
-import bcrypt from "bcryptjs"
-import prisma from "@/lib/prisma"
 
+// Ce fichier est importé par le middleware (Edge Runtime).
+// Pour rester sous la limite de 1Mo de Vercel, on retire les imports lourds (prisma, bcrypt).
 export default {
     providers: [
         Credentials({
-            async authorize(credentials) {
-                if (!credentials?.email || !credentials?.password) return null
-
-                const user = await prisma.user.findUnique({
-                    where: { email: credentials.email as string }
-                })
-
-                if (!user || !user.password) return null
-
-                const isPasswordCorrect = await bcrypt.compare(
-                    credentials.password as string,
-                    user.password
-                )
-
-                if (!isPasswordCorrect) return null
-
-                return {
-                    id: user.id,
-                    name: user.name,
-                    email: user.email,
-                    role: user.role,
-                    image: user.image,
-                    verificationStatus: user.verificationStatus,
-                    isVerified: user.isVerified,
-                } as any
+            // On laisse la structure, mais la logique réelle sera dans auth.ts
+            async authorize() {
+                return null
             },
         }),
     ],
