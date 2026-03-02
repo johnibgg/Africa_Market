@@ -48,14 +48,14 @@ export function Header() {
   const getDashboardLink = () => {
     if (!user) return "/dashboard/buyer"
     switch (user.role) {
-      case "seller":
+      case "SELLER":
         return "/dashboard/seller"
-      case "admin":
+      case "ADMIN":
         return "/admin"
-      case "delivery":
-        return "/dashboard/delivery"
+      case "DELIVERY":
+        return "/dashboard/partner"
       default:
-        return "/dashboard/buyer"
+        return "/dashboard/BUYER"
     }
   }
 
@@ -85,7 +85,7 @@ export function Header() {
               <Play className="h-4 w-4 text-teal-500 fill-teal-500" /> Vidéos
             </Button>
           </Link>
-          {user?.role === "delivery" && (
+          {user?.role === "DELIVERY" && (
             <Link href="/delivery/discover">
               <Button variant="ghost" size="sm" className="flex items-center gap-2">
                 <Truck className="h-4 w-4 text-orange-500" /> Livrer
@@ -152,7 +152,7 @@ export function Header() {
                     {t("nav.messages")}
                   </Link>
                 </DropdownMenuItem>
-                {user?.role === "admin" && (
+                {user?.role === "ADMIN" && (
                   <DropdownMenuItem asChild>
                     <Link href="/dashboard/admin" className="flex items-center gap-2">
                       <Shield className="h-4 w-4" />
@@ -160,7 +160,7 @@ export function Header() {
                     </Link>
                   </DropdownMenuItem>
                 )}
-                {user?.role === "buyer" && (
+                {user?.role === "BUYER" && (
                   <DropdownMenuItem asChild>
                     <Link href="/auth/verify" className="flex items-center gap-2 text-teal-600 font-medium">
                       <Store className="h-4 w-4" />
@@ -168,7 +168,7 @@ export function Header() {
                     </Link>
                   </DropdownMenuItem>
                 )}
-                {user?.verificationStatus !== "verified" && user?.role !== "buyer" && (
+                {user?.verificationStatus !== "VERIFIED" && user?.role !== "BUYER" && (
                   <DropdownMenuItem asChild>
                     <Link href="/auth/verify" className="flex items-center gap-2 text-teal-600 font-medium">
                       <ShieldCheck className="h-4 w-4" />

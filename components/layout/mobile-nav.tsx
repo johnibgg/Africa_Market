@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import {
   Home,
@@ -53,24 +54,24 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
       { href: "/profile", label: t("nav.profile"), icon: User },
       {
         href:
-          user?.role === "seller"
+          user?.role === "SELLER"
             ? "/dashboard/seller"
-            : user?.role === "admin"
+            : user?.role === "ADMIN"
               ? "/dashboard/admin"
-              : user?.role === "delivery"
-                ? "/dashboard/delivery"
+              : user?.role === "DELIVERY"
+                ? "/dashboard/partner"
                 : "/dashboard/buyer",
         label: t("nav.dashboard"),
         icon: LayoutDashboard,
       },
       { href: "/messages", label: t("nav.messages"), icon: MessageSquare },
-      ...(user?.role === "delivery"
+      ...(user?.role === "DELIVERY"
         ? [{ href: "/delivery/discover", label: "Livrer", icon: Truck }]
         : []),
-      ...(user?.verificationStatus !== "verified"
+      ...(user?.verificationStatus !== "VERIFIED"
         ? [{ href: "/auth/verify", label: "S'authentifier", icon: ShieldCheck }]
         : []),
-      ...(user?.role === "admin"
+      ...(user?.role === "ADMIN"
         ? [{ href: "/dashboard/admin", label: t("nav.admin"), icon: Shield }]
         : []),
     ]

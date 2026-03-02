@@ -1,8 +1,8 @@
-export type UserRole = "buyer" | "seller" | "admin" | "delivery"
+export type UserRole = "BUYER" | "SELLER" | "ADMIN" | "DELIVERY"
 
-export type VerificationStatus = "none" | "pending" | "verified" | "rejected"
+export type VerificationStatus = "NONE" | "PENDING" | "VERIFIED" | "REJECTED"
 
-export type ListingType = "product" | "service"
+export type ListingType = "PRODUCT" | "SERVICE"
 
 export type OrderStatus =
   | "pending"
