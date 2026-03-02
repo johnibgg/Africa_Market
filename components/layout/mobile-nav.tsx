@@ -45,7 +45,7 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
 
   const authItems = isAuthenticated
     ? [
-      { href: `/profile/${user?.id}`, label: t("nav.profile"), icon: User },
+      { href: "/profile", label: t("nav.profile"), icon: User },
       {
         href:
           user?.role === "seller"
