@@ -3,6 +3,8 @@ import { Analytics } from '@vercel/analytics/next'
 import { LanguageProvider } from '@/lib/context/language-context'
 import { CartProvider } from '@/lib/context/cart-context'
 import { AuthProvider } from '@/lib/context/auth-context'
+import { SessionProvider } from 'next-auth/react'
+import { BottomNav } from '@/components/layout/bottom-nav'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -37,7 +39,7 @@ export const viewport: Viewport = {
   initialScale: 1,
 }
 
-import { SessionProvider } from 'next-auth/react'
+
 
 export default function RootLayout({
   children,
@@ -52,6 +54,7 @@ export default function RootLayout({
             <CartProvider>
               <LanguageProvider>
                 {children}
+                <BottomNav />
               </LanguageProvider>
             </CartProvider>
           </AuthProvider>

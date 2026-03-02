@@ -2,9 +2,10 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { MapPin, Eye, Heart, BadgeCheck, Tag } from "lucide-react"
+import { MapPin, Eye, Heart, BadgeCheck, Tag, MessageCircle, ArrowRight } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { RatingStars } from "@/components/rating-stars"
 import { PriceDisplay } from "@/components/price-display"
 import type { Listing } from "@/lib/types"
@@ -19,10 +20,11 @@ interface ListingCardProps {
 
 export function ListingCard({ listing, variant = "grid", className }: ListingCardProps) {
   const { t } = useLanguage()
+  const href = listing.type === "service" ? `/services/${listing.id}` : `/listings/${listing.id}`
 
   if (variant === "list") {
     return (
-      <Link href={listing.type === "service" ? `/services/${listing.id}` : `/listings/${listing.id}`}>
+      <Link href={href}>
         <Card className={cn("overflow-hidden transition-shadow hover:shadow-lg group", className)}>
           <div className="flex gap-4 p-4">
             <div className="relative h-32 w-40 flex-shrink-0 overflow-hidden rounded-lg">
@@ -79,24 +81,25 @@ export function ListingCard({ listing, variant = "grid", className }: ListingCar
   }
 
   return (
-    <Link href={listing.type === "service" ? `/services/${listing.id}` : `/listings/${listing.id}`}>
-      <Card className={cn("overflow-hidden transition-all hover:shadow-lg group h-full", className)}>
-        <div className="relative aspect-[4/3] overflow-hidden">
+    <Card className={cn("overflow-hidden transition-all hover:shadow-xl group h-full flex flex-col border-0 shadow-md rounded-2xl", className)}>
+      {/* Image */}
+      <Link href={href} className="block">
+        <div className="relative aspect-[4/3] overflow-hidden rounded-t-2xl">
           <Image
             src={listing.images[0]}
             alt={listing.title}
             fill
-            className="object-cover transition-transform group-hover:scale-105"
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-foreground/20 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
           {listing.isPromoted && (
-            <Badge className="absolute top-3 left-3 bg-accent text-accent-foreground text-xs shadow-sm">
+            <Badge className="absolute top-3 left-3 bg-amber-500 text-white text-xs shadow-sm border-none font-bold">
               <Tag className="mr-1 h-3 w-3" />
               {t("common.promoted")}
             </Badge>
           )}
           <button
-            className="absolute top-3 right-3 flex h-8 w-8 items-center justify-center rounded-full bg-card/80 backdrop-blur-sm transition-colors hover:bg-card"
+            className="absolute top-3 right-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/80 backdrop-blur-sm transition-all hover:bg-white hover:scale-110 active:scale-95"
             onClick={(e) => { e.preventDefault(); e.stopPropagation() }}
             aria-label={t("listing.favorite")}
           >
@@ -104,58 +107,80 @@ export function ListingCard({ listing, variant = "grid", className }: ListingCar
               className={cn(
                 "h-4 w-4",
                 listing.isFavorited
-                  ? "fill-destructive text-destructive"
-                  : "text-muted-foreground"
+                  ? "fill-red-500 text-red-500"
+                  : "text-slate-500"
               )}
             />
           </button>
-          <Badge variant="secondary" className="absolute bottom-3 left-3 text-xs backdrop-blur-sm">
-            {listing.type === "product" ? t("search.type_product") : t("search.type_service")}
-          </Badge>
-        </div>
-        <CardContent className="p-4">
-          <div className="mb-2 flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">{listing.category}</span>
-            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+          <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+            <Badge variant="secondary" className="text-xs backdrop-blur-sm bg-white/90 text-slate-700 font-semibold border-none">
+              {listing.type === "product" ? t("search.type_product") : t("search.type_service")}
+            </Badge>
+            <span className="flex items-center gap-1 text-xs text-white/80 font-medium">
               <Eye className="h-3 w-3" />
               {listing.views}
             </span>
           </div>
-          <h3 className="font-semibold text-foreground line-clamp-2 text-balance leading-snug">
-            {listing.title}
-          </h3>
-          <PriceDisplay
-            amount={listing.price}
-            size="sm"
-            className="mt-2"
-            suffix={listing.type === "service" ? "" : undefined}
-          />
-          <div className="mt-3 flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <div className="relative h-6 w-6 overflow-hidden rounded-full">
-                <Image
-                  src={listing.seller.avatar}
-                  alt={listing.seller.name}
-                  fill
-                  className="object-cover"
-                />
-              </div>
-              <span className="text-xs text-muted-foreground">{listing.seller.name}</span>
-              {listing.seller.isVerified && (
-                <BadgeCheck className="h-3.5 w-3.5 text-primary" />
-              )}
+        </div>
+      </Link>
+
+      {/* Content */}
+      <CardContent className="p-4 flex flex-col flex-1">
+        <div className="mb-1">
+          <span className="text-xs font-medium text-primary/80 uppercase tracking-wide">{listing.category}</span>
+        </div>
+        <h3 className="font-bold text-foreground line-clamp-2 text-balance leading-snug text-sm flex-1">
+          {listing.title}
+        </h3>
+        <PriceDisplay
+          amount={listing.price}
+          size="sm"
+          className="mt-2 font-black"
+          suffix={listing.type === "service" ? "" : undefined}
+        />
+
+        <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5">
+            <div className="relative h-5 w-5 overflow-hidden rounded-full ring-1 ring-border">
+              <Image
+                src={listing.seller.avatar}
+                alt={listing.seller.name}
+                fill
+                className="object-cover"
+              />
             </div>
-            <span className="flex items-center gap-1 text-xs text-muted-foreground">
-              <MapPin className="h-3 w-3" />
-              {listing.location}
-            </span>
+            <span className="truncate max-w-[80px]">{listing.seller.name}</span>
+            {listing.seller.isVerified && (
+              <BadgeCheck className="h-3.5 w-3.5 text-teal-600 flex-shrink-0" />
+            )}
           </div>
-          <div className="mt-2 flex items-center gap-1">
-            <RatingStars rating={listing.rating} size="sm" />
-            <span className="text-xs text-muted-foreground">({listing.reviewCount})</span>
-          </div>
-        </CardContent>
-      </Card>
-    </Link>
+          <span className="flex items-center gap-1">
+            <MapPin className="h-3 w-3" />
+            {listing.location}
+          </span>
+        </div>
+
+        <div className="mt-2 flex items-center gap-1">
+          <RatingStars rating={listing.rating} size="sm" />
+          <span className="text-xs text-muted-foreground">({listing.reviewCount})</span>
+        </div>
+
+        {/* Action button — visible on hover on desktop, always on mobile */}
+        <Link href={href} className="block mt-3">
+          <Button
+            size="sm"
+            className="w-full bg-teal-600 hover:bg-teal-700 text-white rounded-xl h-9 font-bold text-xs gap-1.5 transition-all opacity-0 group-hover:opacity-100 md:flex"
+          >
+            Voir l'annonce <ArrowRight className="h-3 w-3" />
+          </Button>
+          <Button
+            size="sm"
+            className="w-full bg-teal-50 hover:bg-teal-100 text-teal-700 rounded-xl h-9 font-bold text-xs gap-1.5 md:hidden"
+          >
+            Voir l'annonce <ArrowRight className="h-3 w-3" />
+          </Button>
+        </Link>
+      </CardContent>
+    </Card>
   )
 }

@@ -12,30 +12,18 @@ export async function POST(req: Request) {
         const { type, ...data } = await req.json()
         const userId = session.user.id as string
 
-        // In a real production app, we would process file uploads to S3/Cloudinary here.
-        // For this implementation, we assume the data contains URLs or identifiers for documents.
-
-        const verification = await prisma.verificationRequest.create({
-            data: {
-                userId,
-                type, // "SELLER" or "DELIVERY"
-                status: "PENDING",
-                data: data, // Store submitted fields (ID number, address, etc.)
-            }
-        })
-
-        // Update user status
+        // Update user's verification status and requested role
         await prisma.user.update({
             where: { id: userId },
             data: {
-                isVerified: false, // Still false until approved
-                role: type // Set requested role (even if not verified yet, UI handles view)
+                isVerified: false,
+                verificationStatus: "PENDING",
+                role: type as any,
             }
         })
 
         return NextResponse.json({
-            message: "Demande soumise avec succès",
-            id: verification.id
+            message: "Demande soumise avec succès. Votre compte sera vérifié sous 24-48h.",
         })
     } catch (error) {
         console.error("VERIFICATION_SUBMIT_ERROR", error)

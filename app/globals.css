@@ -133,5 +133,12 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Add padding at bottom on mobile for the sticky bottom nav */
+    padding-bottom: 4rem;
+  }
+  @media (min-width: 768px) {
+    body {
+      padding-bottom: 0;
+    }
   }
 }

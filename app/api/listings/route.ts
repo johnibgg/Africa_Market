@@ -5,12 +5,16 @@ import prisma from "@/lib/prisma"
 export async function POST(req: Request) {
     try {
         const session = await auth()
-        if (!session || !session.user || (session.user as any).role !== "SELLER") {
+        if (!session || !session.user) {
             return NextResponse.json({ message: "Non autorisé" }, { status: 401 })
         }
 
         const body = await req.json()
-        const { title, description, price, categoryId, images, type, location, quartier } = body
+        const { title, description, price, categoryId, images, videoUrls, type, adType, location, quartier } = body
+
+        if (adType !== "WANTED" && (session.user as any).role !== "SELLER") {
+            return NextResponse.json({ message: "Vous devez être vendeur pour publier une offre. Vous pouvez cependant publier une annonce de recherche." }, { status: 403 })
+        }
 
         if (!title || !price || !categoryId) {
             return NextResponse.json({ message: "Champs obligatoires manquants" }, { status: 400 })
@@ -25,7 +29,9 @@ export async function POST(req: Request) {
                 categoryId,
                 sellerId: session.user.id as string,
                 images: images || [],
+                videoUrls: videoUrls || [],
                 type: type || "PRODUCT",
+                adType: adType || "OFFER",
                 location: location || "Cotonou",
                 quartier: quartier,
                 status: "active",
@@ -66,11 +72,19 @@ export async function GET(req: Request) {
         const { searchParams } = new URL(req.url)
         const category = searchParams.get("category")
         const type = searchParams.get("type")
+        const adType = searchParams.get("adType")
         const query = searchParams.get("q")
+        const promoted = searchParams.get("promoted")
+        const sellerId = searchParams.get("sellerId")
+        const limit = parseInt(searchParams.get("limit") || "20")
+        const offset = parseInt(searchParams.get("offset") || "0")
 
         const where: any = { status: "active" }
         if (category) where.categoryId = category
         if (type) where.type = type
+        if (adType) where.adType = adType
+        if (promoted === "true") where.isPromoted = true
+        if (sellerId) where.sellerId = sellerId
         if (query) {
             where.OR = [
                 { title: { contains: query, mode: "insensitive" } },
@@ -92,7 +106,9 @@ export async function GET(req: Request) {
                     }
                 }
             },
-            orderBy: { createdAt: "desc" }
+            orderBy: { createdAt: "desc" },
+            take: limit,
+            skip: offset,
         })
 
         return NextResponse.json(listings)

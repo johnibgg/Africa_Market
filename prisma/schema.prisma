@@ -28,6 +28,11 @@ enum ListingType {
   SERVICE
 }
 
+enum AdType {
+  OFFER
+  WANTED
+}
+
 enum OrderStatus {
   PENDING
   CONFIRMED
@@ -96,6 +101,8 @@ model Listing {
   price            Float
   currency         String      @default("FCFA")
   images           String[]
+  videoUrls        String[]    @default([])
+  adType           AdType      @default(OFFER)
   location         String
   quartier         String?
   rating           Float       @default(0)

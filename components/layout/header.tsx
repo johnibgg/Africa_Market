@@ -14,6 +14,7 @@ import {
   Play,
   Truck,
   ShieldCheck,
+  PlusCircle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -90,6 +91,11 @@ export function Header() {
               <Button variant="ghost" size="sm">{t("nav.messages")}</Button>
             </Link>
           )}
+          <Link href="/listings/new">
+            <Button size="sm" className="ml-2 bg-teal-600 hover:bg-teal-700 text-white shadow-lg shadow-teal-600/20 gap-2">
+              <PlusCircle className="h-4 w-4" /> Vendre
+            </Button>
+          </Link>
         </nav>
 
         {/* Right side actions */}

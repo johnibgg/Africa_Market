@@ -17,6 +17,7 @@ import {
   Truck,
   Play,
   ShieldCheck,
+  PlusCircle,
 } from "lucide-react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
@@ -37,6 +38,7 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
   const navItems = [
     { href: "/", label: t("nav.home"), icon: Home },
     { href: "/search", label: t("nav.search"), icon: Search },
+    { href: "/listings/new", label: "Publier", icon: PlusCircle, primary: true },
     { href: "/videos", label: "Vidéos", icon: Play },
     { href: "/cart", label: t("nav.cart"), icon: ShoppingCart },
   ]
@@ -93,9 +95,12 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
             </div>
           )}
 
-          {navItems.map((item) => (
+          {navItems.map((item: any) => (
             <Link key={item.href} href={item.href} onClick={onClose}>
-              <Button variant="ghost" className="w-full justify-start gap-3">
+              <Button
+                variant={item.primary ? "default" : "ghost"}
+                className={`w-full justify-start gap-3 ${item.primary ? "bg-teal-600 hover:bg-teal-700 text-white shadow-lg shadow-teal-600/20" : ""}`}
+              >
                 <item.icon className="h-4 w-4" />
                 {item.label}
               </Button>

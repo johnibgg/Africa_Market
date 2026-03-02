@@ -2,21 +2,39 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Search, MapPin } from "lucide-react"
+import { Search, MapPin, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useLanguage } from "@/lib/context/language-context"
+
+const CATEGORIES = [
+  { label: "Toutes catégories", value: "" },
+  { label: "Mécanique", value: "mecanique" },
+  { label: "Menuiserie", value: "menuiserie" },
+  { label: "Restauration", value: "restauration" },
+  { label: "Électronique", value: "electronique" },
+  { label: "Mode & Vêtements", value: "mode" },
+  { label: "Beauté & Bien-être", value: "beaute" },
+  { label: "Maison & Déco", value: "maison" },
+  { label: "Agriculture", value: "agriculture" },
+  { label: "Éducation", value: "education" },
+  { label: "Transport", value: "transport" },
+  { label: "Santé", value: "sante" },
+  { label: "Construction", value: "construction" },
+]
 
 export function HeroSection() {
   const { t } = useLanguage()
   const router = useRouter()
   const [query, setQuery] = useState("")
+  const [category, setCategory] = useState("")
   const [location, setLocation] = useState("")
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     const params = new URLSearchParams()
     if (query) params.set("q", query)
+    if (category) params.set("category", category)
     if (location) params.set("location", location)
     router.push(`/search?${params.toString()}`)
   }
@@ -38,43 +56,61 @@ export function HeroSection() {
           {t("hero.subtitle")}
         </p>
 
-        {/* Search form */}
-        <form
-          onSubmit={handleSearch}
-          className="mx-auto mt-8 flex max-w-2xl flex-col gap-3 sm:flex-row"
-        >
-          <div className="relative flex-1">
-            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={t("hero.search_placeholder")}
-              className="h-12 bg-card pl-10 text-foreground placeholder:text-muted-foreground"
-            />
+        {/* Search form — with category dropdown */}
+        <form onSubmit={handleSearch} className="mx-auto mt-8 max-w-3xl">
+          <div className="flex flex-col sm:flex-row gap-2 bg-white rounded-2xl p-2 shadow-2xl">
+            {/* Category dropdown */}
+            <div className="relative sm:w-48 flex-shrink-0">
+              <ChevronDown className="absolute top-1/2 right-3 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full h-11 appearance-none bg-muted/50 rounded-xl pl-3 pr-8 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-teal-500"
+              >
+                {CATEGORIES.map((cat) => (
+                  <option key={cat.value} value={cat.value}>{cat.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Search input */}
+            <div className="relative flex-1">
+              <Search className="absolute top-1/2 left-3 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={t("hero.search_placeholder")}
+                className="h-11 bg-transparent pl-10 border-0 focus-visible:ring-0 text-foreground placeholder:text-muted-foreground"
+              />
+            </div>
+
+            {/* Location */}
+            <div className="relative sm:w-36 flex-shrink-0">
+              <MapPin className="absolute top-1/2 left-3 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder={t("hero.location_placeholder")}
+                className="h-11 bg-transparent pl-9 border-0 focus-visible:ring-0 text-foreground placeholder:text-muted-foreground"
+              />
+            </div>
+
+            <Button type="submit" size="lg" className="h-11 bg-teal-600 hover:bg-teal-700 text-white border-none px-6 rounded-xl font-bold shrink-0">
+              <Search className="mr-2 h-4 w-4" />
+              {t("hero.cta")}
+            </Button>
           </div>
-          <div className="relative sm:w-48">
-            <MapPin className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder={t("hero.location_placeholder")}
-              className="h-12 bg-card pl-10 text-foreground placeholder:text-muted-foreground"
-            />
-          </div>
-          <Button type="submit" size="lg" className="h-12 bg-accent px-8 text-accent-foreground hover:bg-accent/90">
-            <Search className="mr-2 h-4 w-4" />
-            {t("hero.cta")}
-          </Button>
         </form>
 
         {/* Quick categories */}
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
+        <div className="mt-5 flex flex-wrap justify-center gap-2">
           {["Menuiserie", "Restauration", "Mode", "Electronique", "Mecanique"].map((cat) => (
             <Button
               key={cat}
               variant="secondary"
               size="sm"
-              className="h-8 rounded-full bg-primary-foreground/15 text-xs text-primary-foreground hover:bg-primary-foreground/25"
+              type="button"
+              className="h-8 rounded-full bg-primary-foreground/15 text-xs text-primary-foreground hover:bg-primary-foreground/30 border-none font-semibold"
               onClick={() => router.push(`/search?category=${cat.toLowerCase()}`)}
             >
               {cat}

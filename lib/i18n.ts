@@ -96,6 +96,9 @@ const translations = {
     "cart.continue_shopping": "Continuer les achats",
     "cart.remove": "Supprimer",
     "cart.quantity": "Quantite",
+    "cart.clear": "Vider le panier",
+    "cart.secure_payment": "Paiement 100% securise",
+    "cart.calculated_at_checkout": "Calcule a la commande",
 
     // Checkout
     "checkout.title": "Validation de commande",
@@ -146,6 +149,8 @@ const translations = {
     "auth.has_account": "Deja un compte ?",
     "auth.login_btn": "Se connecter",
     "auth.register_btn": "S'inscrire",
+    "auth.login_subtitle": "Connectez-vous a votre compte AfricaMarket",
+    "auth.login_desc": "Entrez votre email et mot de passe",
     "auth.verify_title": "Verification",
     "auth.verify_desc": "Entrez le code envoye a votre telephone",
     "auth.verify_btn": "Verifier",
@@ -312,6 +317,9 @@ const translations = {
     "cart.continue_shopping": "Continue Shopping",
     "cart.remove": "Remove",
     "cart.quantity": "Quantity",
+    "cart.clear": "Clear Cart",
+    "cart.secure_payment": "100% Secure Payment",
+    "cart.calculated_at_checkout": "Calculated at checkout",
 
     // Checkout
     "checkout.title": "Checkout",
@@ -362,6 +370,8 @@ const translations = {
     "auth.has_account": "Already have an account?",
     "auth.login_btn": "Sign In",
     "auth.register_btn": "Sign Up",
+    "auth.login_subtitle": "Sign in to your AfricaMarket account",
+    "auth.login_desc": "Enter your email and password",
     "auth.verify_title": "Verification",
     "auth.verify_desc": "Enter the code sent to your phone",
     "auth.verify_btn": "Verify",
