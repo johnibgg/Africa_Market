@@ -9,7 +9,11 @@ export async function POST(req: Request) {
             return NextResponse.json({ message: "Non autorisé" }, { status: 401 })
         }
 
-        const { type, ...data } = await req.json()
+        const formData = await req.formData()
+        const type = formData.get("type") as string
+        const idNumber = formData.get("idNumber") as string
+        // Les fichiers idFront et selfie sont présents dans le formData mais non stockés
+        // dans cet exemple (simulant une réussite d'upload).
         const userId = session.user.id as string
 
         // Update user's verification status and requested role

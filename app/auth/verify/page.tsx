@@ -36,30 +36,44 @@ export default function VerifyPage() {
             toast.error("Veuillez entrer votre numéro de pièce d'identité")
             return
         }
+        if (step === 2 && !files.idFront) {
+            toast.error("Veuillez télécharger une photo de votre pièce d'identité")
+            return
+        }
         setStep(step + 1)
     }
 
     const [isLoading, setIsLoading] = useState(false)
 
-    const submitVerification = async () => {
-        // Assuming verificationType and formData would be derived from idType, idNumber, and files state
-        // For this specific context, we'll use the existing idType and idNumber
-        // and assume files will be handled in a more complex way if this were a real file upload scenario.
-        // The provided snippet uses `verificationType` and `formData` which are not defined in the current component state.
-        // I will adapt it to use `idType` and `idNumber` as per the original `handleSubmit` logic.
+    const handleFileChange = (type: "idFront" | "selfie", e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0] || null
+        setFiles(prev => ({ ...prev, [type]: file }))
+    }
 
-        setIsLoading(true) // Changed from setIsSubmitting to setIsLoading
+    const submitVerification = async () => {
+        if (!files.idFront || !files.selfie) {
+            toast.error("Veuillez fournir toutes les photos demandées.")
+            return
+        }
+
+        setIsLoading(true)
         try {
-            const response = await fetch("/api/user/verification/submit", { // Changed endpoint to match snippet
+            // Dans une version réelle, nous utiliserions FormData pour envoyer les fichiers
+            const formData = new FormData()
+            formData.append("type", idType)
+            formData.append("idNumber", idNumber)
+            if (files.idFront) formData.append("idFront", files.idFront)
+            if (files.selfie) formData.append("selfie", files.selfie)
+
+            const response = await fetch("/api/user/verification/submit", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    type: idType, // Using idType as 'type'
-                    idNumber: idNumber // Using idNumber
-                    // If files were to be sent, they would require FormData and not JSON.stringify
-                })
+                body: formData // On envoie le FormData directement
             })
 
+            if (!response.ok) {
+                const error = await response.json()
+                throw new Error(error.message || "Erreur lors de la soumission")
+            }
 
             toast.success("Votre demande de vérification a été soumise avec succès !")
             router.push("/profile")
@@ -103,8 +117,8 @@ export default function VerifyPage() {
                 <div className="inline-flex items-center justify-center p-3 bg-teal-100 rounded-full mb-4">
                     <ShieldCheck className="w-8 h-8 text-teal-600" />
                 </div>
-                <h1 className="text-3xl font-bold font-heading">Vérification de Compte Strict</h1>
-                <p className="text-muted-foreground mt-2">Pour vendre ou livrer sur AfricaMarket, nous devons vérifier votre identité conformément aux réglementations locales.</p>
+                <h1 className="text-3xl font-bold font-heading">Vérification d'Identité</h1>
+                <p className="text-muted-foreground mt-2">Pour vendre sur AfricaMarket, nous devons vérifier votre identité. Choisissez <b>une seule</b> pièce parmi les trois proposées.</p>
             </div>
 
             <div className="flex justify-between mb-8 relative">
@@ -125,12 +139,12 @@ export default function VerifyPage() {
                 {step === 1 && (
                     <>
                         <CardHeader>
-                            <CardTitle className="font-heading">Étape 1 : Informations d'identité</CardTitle>
-                            <CardDescription>Choisissez le type de pièce et entrez le numéro.</CardDescription>
+                            <CardTitle className="font-heading">Étape 1 : Choix de la pièce</CardTitle>
+                            <CardDescription>Choisissez <b>une</b> pièce d'identité et entrez son numéro.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                {(["cni", "passport", "resident"] as const).map((type) => (
+                                {(['cni', 'passport', 'resident'] as const).map((type) => (
                                     <div
                                         key={type}
                                         onClick={() => setIdType(type)}
@@ -146,7 +160,7 @@ export default function VerifyPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="id-number">Numéro de la pièce d'identité</Label>
+                                <Label htmlFor="id-number">Numéro de la pièce d'identité choisie</Label>
                                 <Input
                                     id="id-number"
                                     placeholder="Ex: 1234567890"
@@ -158,7 +172,7 @@ export default function VerifyPage() {
 
                             <div className="p-4 bg-orange-50 border border-orange-100 rounded-xl flex gap-3">
                                 <AlertCircle className="w-5 h-5 text-orange-600 shrink-0" />
-                                <p className="text-sm text-orange-800">Assurez-vous que le numéro correspond exactemet à celui sur votre pièce physique.</p>
+                                <p className="text-sm text-orange-800">Assurez-vous que le numéro correspond exactement à celui sur votre pièce physique.</p>
                             </div>
                         </CardContent>
                     </>
@@ -168,13 +182,34 @@ export default function VerifyPage() {
                     <>
                         <CardHeader>
                             <CardTitle className="font-heading">Étape 2 : Photo de la pièce</CardTitle>
-                            <CardDescription>Téléchargez une photo claire du recto de votre pièce.</CardDescription>
+                            <CardDescription>Téléchargez une photo claire du recto (devant) de votre pièce.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
-                            <div className="border-2 border-dashed border-teal-200 rounded-2xl p-12 text-center bg-teal-50/30 hover:bg-teal-50 transition-colors cursor-pointer group">
-                                <Upload className="w-12 h-12 mx-auto text-teal-400 group-hover:text-teal-600 transition-colors mb-4" />
-                                <h3 className="text-lg font-bold text-teal-900">Cliquez pour télécharger</h3>
-                                <p className="text-sm text-teal-600 mt-1">PNG, JPG ou PDF (Max 5MB)</p>
+                            <div
+                                className={`border-2 border-dashed rounded-2xl p-12 text-center transition-colors cursor-pointer group ${files.idFront ? "border-green-500 bg-green-50" : "border-teal-200 bg-teal-50/30 hover:bg-teal-50"
+                                    }`}
+                                onClick={() => document.getElementById("idFrontInput")?.click()}
+                            >
+                                <input
+                                    id="idFrontInput"
+                                    type="file"
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={(e) => handleFileChange("idFront", e)}
+                                />
+                                {files.idFront ? (
+                                    <>
+                                        <CheckCircle2 className="w-12 h-12 mx-auto text-green-500 mb-4" />
+                                        <h3 className="text-lg font-bold text-green-900">Photo sélectionnée</h3>
+                                        <p className="text-sm text-green-600 mt-1">{files.idFront.name}</p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Upload className="w-12 h-12 mx-auto text-teal-400 group-hover:text-teal-600 transition-colors mb-4" />
+                                        <h3 className="text-lg font-bold text-teal-900">Cliquez pour télécharger</h3>
+                                        <p className="text-sm text-teal-600 mt-1">Recto de la pièce (PNG, JPG, Max 5MB)</p>
+                                    </>
+                                )}
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
@@ -190,8 +225,8 @@ export default function VerifyPage() {
                                     <p className="text-xs font-bold text-muted-foreground uppercase">À éviter</p>
                                     <ul className="text-xs space-y-1 text-red-700">
                                         <li>✕ Reflets de lumière</li>
+                                        <li>✕ Portrait flou</li>
                                         <li>✕ Éléments cachés</li>
-                                        <li>✕ Photo floue</li>
                                     </ul>
                                 </div>
                             </div>
@@ -202,26 +237,40 @@ export default function VerifyPage() {
                 {step === 3 && (
                     <>
                         <CardHeader>
-                            <CardTitle className="font-heading">Étape 3 : Selfie de vérification</CardTitle>
-                            <CardDescription>Prenez une photo de vous tenant votre pièce à côté de votre visage.</CardDescription>
+                            <CardTitle className="font-heading">Étape 3 : Selfie avec votre pièce</CardTitle>
+                            <CardDescription>Téléchargez une photo de vous tenant votre pièce d'identité à côté de votre visage.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
-                            <div className="relative aspect-[4/3] bg-muted rounded-2xl overflow-hidden flex items-center justify-center border-2 border-teal-100">
-                                <div className="text-center p-8">
-                                    <Camera className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
-                                    <p className="text-sm text-muted-foreground">Utilisez votre caméra pour prendre une photo en direct</p>
-                                    <Button className="mt-4 bg-teal-600 hover:bg-teal-700">Allumer la caméra</Button>
-                                </div>
-
-                                <div className="absolute top-4 right-4 bg-black/60 text-white px-3 py-1 rounded-full text-xs font-medium flex items-center gap-2">
-                                    <User className="w-3 h-3" />
-                                    Exemple
-                                </div>
+                            <div
+                                className={`border-2 border-dashed rounded-2xl p-12 text-center transition-colors cursor-pointer group ${files.selfie ? "border-green-500 bg-green-50" : "border-teal-200 bg-teal-50/30 hover:bg-teal-50"
+                                    }`}
+                                onClick={() => document.getElementById("selfieInput")?.click()}
+                            >
+                                <input
+                                    id="selfieInput"
+                                    type="file"
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={(e) => handleFileChange("selfie", e)}
+                                />
+                                {files.selfie ? (
+                                    <>
+                                        <CheckCircle2 className="w-12 h-12 mx-auto text-green-500 mb-4" />
+                                        <h3 className="text-lg font-bold text-green-900">Selfie sélectionné</h3>
+                                        <p className="text-sm text-green-600 mt-1">{files.selfie.name}</p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Camera className="w-12 h-12 mx-auto text-teal-400 group-hover:text-teal-600 transition-colors mb-4" />
+                                        <h3 className="text-lg font-bold text-teal-900">Cliquez pour télécharger le selfie</h3>
+                                        <p className="text-sm text-teal-600 mt-1">Votre visage + la pièce tenue en main</p>
+                                    </>
+                                )}
                             </div>
 
                             <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
                                 <p className="text-sm text-blue-800 font-medium">Pourquoi cette étape ?</p>
-                                <p className="text-xs text-blue-700 mt-1">Cela nous permet de confirmer que vous êtes bien le titulaire de la pièce d'identité fournie.</p>
+                                <p className="text-xs text-blue-700 mt-1">Cela nous permet de confirmer que vous êtes bien le titulaire de la pièce fournie.</p>
                             </div>
                         </CardContent>
                     </>
@@ -239,7 +288,7 @@ export default function VerifyPage() {
                     )}
 
                     {step < 3 ? (
-                        <Button className="bg-teal-600 hover:bg-teal-700 px-8" onClick={() => setStep(step + 1)}>
+                        <Button className="bg-teal-600 hover:bg-teal-700 px-8" onClick={handleNext}>
                             Suivant <ChevronRight className="ml-2 w-4 h-4" />
                         </Button>
                     ) : (
