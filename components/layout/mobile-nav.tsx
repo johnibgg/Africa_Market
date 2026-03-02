@@ -35,6 +35,11 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
   const { t } = useLanguage()
   const { user, isAuthenticated, login, logout } = useAuth()
 
+  const [hasMounted, setHasMounted] = useState(false)
+  useEffect(() => {
+    setHasMounted(true)
+  }, [])
+
   const navItems = [
     { href: "/", label: t("nav.home"), icon: Home },
     { href: "/search", label: t("nav.search"), icon: Search },
@@ -43,7 +48,7 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
     { href: "/cart", label: t("nav.cart"), icon: ShoppingCart },
   ]
 
-  const authItems = isAuthenticated
+  const authItems = (hasMounted && isAuthenticated)
     ? [
       { href: "/profile", label: t("nav.profile"), icon: User },
       {

@@ -30,7 +30,7 @@ import { MobileNav } from "@/components/layout/mobile-nav"
 import { useLanguage } from "@/lib/context/language-context"
 import { useCart } from "@/lib/context/cart-context"
 import { useAuth } from "@/lib/context/auth-context"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { NotificationsDropdown } from "@/components/layout/notifications-dropdown"
 
 export function Header() {
@@ -38,6 +38,12 @@ export function Header() {
   const { itemCount } = useCart()
   const { user, isAuthenticated, login, logout } = useAuth()
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
+
+  // Fix hydration mismatch for auth-dependent UI
+  const [hasMounted, setHasMounted] = useState(false)
+  useEffect(() => {
+    setHasMounted(true)
+  }, [])
 
   const getDashboardLink = () => {
     if (!user) return "/dashboard/buyer"
@@ -111,9 +117,10 @@ export function Header() {
 
 
 
-          {isAuthenticated && <NotificationsDropdown />}
+          {hasMounted && isAuthenticated && <NotificationsDropdown />}
+          {!hasMounted && <div className="h-9 w-9" />}
 
-          {isAuthenticated ? (
+          {hasMounted && isAuthenticated ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-9 w-9">
@@ -176,7 +183,7 @@ export function Header() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          ) : (
+          ) : hasMounted ? (
             <div className="hidden items-center gap-2 sm:flex">
               <Button variant="ghost" size="sm" onClick={() => login("buyer")}>
                 {t("nav.login")}
@@ -185,6 +192,8 @@ export function Header() {
                 <Button size="sm">{t("nav.register")}</Button>
               </Link>
             </div>
+          ) : (
+            <div className="hidden w-[150px] sm:block" />
           )}
 
           {/* Mobile menu button */}
