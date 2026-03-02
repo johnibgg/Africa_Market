@@ -222,7 +222,9 @@ export default function SellerDashboard() {
                                     <div className="text-right">
                                         <p className="text-sm font-bold">{order.total.toLocaleString()} FCFA</p>
                                         <Badge variant="outline" className="text-[10px] h-4">
-                                            {order.status}
+                                            {order.status === "DELIVERED" ? "Livré" :
+                                                order.status === "SHIPPED" ? "Expédié" :
+                                                    order.status === "PROCESSING" ? "En cours" : order.status}
                                         </Badge>
                                     </div>
                                 </div>
@@ -286,7 +288,16 @@ export default function SellerDashboard() {
                                                     </div>
                                                 </td>
                                                 <td className="p-4">
-                                                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Actif</Badge>
+                                                    <Badge
+                                                        variant="outline"
+                                                        className={
+                                                            listing.status === "ACTIVE"
+                                                                ? "bg-green-50 text-green-700 border-green-200"
+                                                                : "bg-gray-50 text-gray-700 border-gray-200"
+                                                        }
+                                                    >
+                                                        {listing.status === "ACTIVE" ? "Actif" : listing.status}
+                                                    </Badge>
                                                 </td>
                                                 <td className="p-4 text-right">
                                                     <div className="flex justify-end gap-1">

@@ -59,10 +59,11 @@ export default function PartnerDashboard() {
 
     const getStatusBadge = (status: string) => {
         switch (status) {
-            case "pending": return <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-200">En attente</Badge>
-            case "picked_up": return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-200">Récupéré</Badge>
-            case "in_transit": return <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-200">En transit</Badge>
-            case "delivered": return <Badge className="bg-green-100 text-green-700 hover:bg-green-200">Livré</Badge>
+            case "PENDING": return <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-200">En attente</Badge>
+            case "PICKED_UP": return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-200">Récupéré</Badge>
+            case "IN_TRANSIT": return <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-200">En transit</Badge>
+            case "SHIPPED": return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-200">Expédié</Badge>
+            case "DELIVERED": return <Badge className="bg-green-100 text-green-700 hover:bg-green-200">Livré</Badge>
             default: return <Badge>{status}</Badge>
         }
     }

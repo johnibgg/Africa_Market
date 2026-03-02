@@ -76,10 +76,10 @@ export default function BuyerDashboard() {
 
     const getStatusColor = (status: string) => {
         switch (status) {
-            case "delivered": return "bg-green-100 text-green-700"
-            case "shipped": return "bg-blue-100 text-blue-700"
-            case "processing": return "bg-yellow-100 text-yellow-700"
-            case "confirmed": return "bg-teal-100 text-teal-700"
+            case "DELIVERED": return "bg-green-100 text-green-700"
+            case "SHIPPED": return "bg-blue-100 text-blue-700"
+            case "PROCESSING": return "bg-yellow-100 text-yellow-700"
+            case "CONFIRMED": return "bg-teal-100 text-teal-700"
             default: return "bg-gray-100 text-gray-700"
         }
     }
@@ -175,9 +175,9 @@ export default function BuyerDashboard() {
                                             <div className="text-right">
                                                 <p className="text-xs text-muted-foreground mb-1">N° DE COMMANDE {order.id}</p>
                                                 <Badge className={getStatusColor(order.status)}>
-                                                    {order.status === "delivered" ? "Livré" :
-                                                        order.status === "shipped" ? "En cours d'expédition" :
-                                                            order.status === "processing" ? "En traitement" : order.status}
+                                                    {order.status === "DELIVERED" ? "Livré" :
+                                                        order.status === "SHIPPED" ? "En cours d'expédition" :
+                                                            order.status === "PROCESSING" ? "En traitement" : order.status}
                                                 </Badge>
                                             </div>
                                         </div>
@@ -198,7 +198,7 @@ export default function BuyerDashboard() {
                                                         <p className="text-sm font-medium mt-1">{item.price.toLocaleString()} FCFA x {item.quantity}</p>
                                                     </div>
                                                     <div className="flex flex-col gap-2">
-                                                        {order.status === "shipped" && (
+                                                        {order.status === "SHIPPED" && (
                                                             <Dialog open={isTrackingOpen} onOpenChange={setIsTrackingOpen}>
                                                                 <DialogTrigger asChild>
                                                                     <Button size="sm" className="bg-teal-600 hover:bg-teal-700">
@@ -228,7 +228,7 @@ export default function BuyerDashboard() {
                                                                 </DialogContent>
                                                             </Dialog>
                                                         )}
-                                                        {order.status === "confirmed" && (
+                                                        {order.status === "CONFIRMED" && (
                                                             <Button size="sm" className="bg-orange-500 hover:bg-orange-600">
                                                                 <Gavel className="mr-2 h-4 w-4" /> Voir les offres (3)
                                                             </Button>

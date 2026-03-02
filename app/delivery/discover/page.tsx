@@ -12,7 +12,7 @@ import { toast } from "sonner"
 
 export default function DeliveryDiscoverPage() {
     // Mocking available orders that need delivery
-    const availableOrders = orders.filter(o => o.status === "confirmed")
+    const availableOrders = orders.filter(o => o.status === "CONFIRMED")
     const [bids, setBids] = useState<Record<string, string>>({})
 
     const handleBidSubmit = (orderId: string) => {

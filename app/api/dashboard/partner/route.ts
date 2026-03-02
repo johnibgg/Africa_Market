@@ -31,7 +31,7 @@ export async function GET() {
         }).catch(() => 0)
 
         const totalEarnings = await prisma.order.aggregate({
-            where: { status: "DELIVERED" as any },
+            where: { status: "DELIVERED" },
             _sum: { total: true }
         }).catch(() => ({ _sum: { total: 0 } }))
 

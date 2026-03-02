@@ -5,14 +5,14 @@ export type VerificationStatus = "NONE" | "PENDING" | "VERIFIED" | "REJECTED"
 export type ListingType = "PRODUCT" | "SERVICE"
 
 export type OrderStatus =
-  | "pending"
-  | "confirmed"
-  | "processing"
-  | "shipped"
-  | "delivered"
-  | "cancelled"
+  | "PENDING"
+  | "CONFIRMED"
+  | "PROCESSING"
+  | "SHIPPED"
+  | "DELIVERED"
+  | "CANCELLED"
 
-export type ListingStatus = "active" | "draft" | "suspended" | "sold"
+export type ListingStatus = "ACTIVE" | "DRAFT" | "SUSPENDED" | "SOLD"
 
 export interface User {
   id: string
@@ -170,7 +170,7 @@ export interface DeliveryTask {
   delivererId?: string
   pickupAddress: string
   deliveryAddress: string
-  status: "pending" | "picked_up" | "in_transit" | "delivered"
+  status: "PENDING" | "PICKED_UP" | "IN_TRANSIT" | "DELIVERED"
   estimatedTime: string
   fee: number
   buyerName: string

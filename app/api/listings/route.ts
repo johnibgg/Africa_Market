@@ -52,7 +52,7 @@ export async function POST(req: Request) {
                 adType: adType || "OFFER",
                 location: location || "Cotonou",
                 quartier: quartier,
-                status: "active",
+                status: "ACTIVE",
             },
             include: {
                 seller: true
@@ -97,7 +97,7 @@ export async function GET(req: Request) {
         const limit = parseInt(searchParams.get("limit") || "20")
         const offset = parseInt(searchParams.get("offset") || "0")
 
-        const where: any = { status: "active" }
+        const where: any = { status: "ACTIVE" }
         if (category) where.categoryId = category
         if (type) where.type = type
         if (adType) where.adType = adType

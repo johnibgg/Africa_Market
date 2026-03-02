@@ -34,7 +34,49 @@ import { Input } from "@/components/ui/input"
 import Image from "next/image"
 import { ClientOnly } from "@/components/client-only"
 
+import { useState, useEffect } from "react"
+import { useAuth } from "@/lib/context/auth-context"
+import { Loader2 } from "lucide-react"
+
 export default function AdminDashboard() {
+    const { isAuthenticated } = useAuth()
+    const [data, setData] = useState<any>(null)
+    const [isLoading, setIsLoading] = useState(true)
+
+    useEffect(() => {
+        const fetchDashboardData = async () => {
+            try {
+                const res = await fetch("/api/dashboard/admin")
+                if (res.ok) {
+                    const dashboardData = await res.json()
+                    setData(dashboardData)
+                }
+            } catch (error) {
+                console.error("Failed to fetch dashboard data", error)
+            } finally {
+                setIsLoading(false)
+            }
+        }
+
+        if (isAuthenticated) {
+            fetchDashboardData()
+        }
+    }, [isAuthenticated])
+
+    if (isLoading) {
+        return (
+            <div className="flex min-h-screen items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
+            </div>
+        )
+    }
+
+    if (!data) return null
+
+    const stats = data.stats
+    const usersList = data.users
+    const monthlyData = data.monthlyData
+
     return (
         <div className="container mx-auto px-4 py-8">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
@@ -55,10 +97,10 @@ export default function AdminDashboard() {
                         <div className="flex justify-between">
                             <div>
                                 <p className="text-sm text-muted-foreground font-medium">Utilisateurs Totaux</p>
-                                <h3 className="text-2xl font-bold">{adminStats.totalUsers.toLocaleString()}</h3>
+                                <h3 className="text-2xl font-bold">{stats.totalUsers.toLocaleString()}</h3>
                                 <div className="flex items-center text-xs text-green-600 mt-1">
                                     <ArrowUpRight className="w-3 h-3 mr-1" />
-                                    <span>+{adminStats.newUsersToday} aujourd'hui</span>
+                                    <span>+{stats.newUsersToday} aujourd'hui</span>
                                 </div>
                             </div>
                             <div className="p-2 bg-blue-50 rounded-lg">
@@ -72,10 +114,10 @@ export default function AdminDashboard() {
                         <div className="flex justify-between">
                             <div>
                                 <p className="text-sm text-muted-foreground font-medium">Annonces Actives</p>
-                                <h3 className="text-2xl font-bold">{adminStats.totalListings.toLocaleString()}</h3>
+                                <h3 className="text-2xl font-bold">{stats.totalListings.toLocaleString()}</h3>
                                 <div className="flex items-center text-xs text-green-600 mt-1">
                                     <ArrowUpRight className="w-3 h-3 mr-1" />
-                                    <span>+{adminStats.newListingsToday} aujourd'hui</span>
+                                    <span>+{stats.newListingsToday} aujourd'hui</span>
                                 </div>
                             </div>
                             <div className="p-2 bg-teal-50 rounded-lg">
@@ -89,7 +131,7 @@ export default function AdminDashboard() {
                         <div className="flex justify-between">
                             <div>
                                 <p className="text-sm text-muted-foreground font-medium">Commandes Totales</p>
-                                <h3 className="text-2xl font-bold">{adminStats.totalOrders.toLocaleString()}</h3>
+                                <h3 className="text-2xl font-bold">{stats.totalOrders.toLocaleString()}</h3>
                                 <div className="flex items-center text-xs text-red-600 mt-1">
                                     <ArrowDownRight className="w-3 h-3 mr-1" />
                                     <span>-2% vs hier</span>
@@ -106,7 +148,7 @@ export default function AdminDashboard() {
                         <div className="flex justify-between">
                             <div>
                                 <p className="text-sm text-muted-foreground font-medium">Volume d'affaires</p>
-                                <h3 className="text-2xl font-bold">{(adminStats.totalRevenue / 1000000).toFixed(1)}M FCFA</h3>
+                                <h3 className="text-2xl font-bold">{(stats.totalRevenue / 1000000).toFixed(1)}M FCFA</h3>
                                 <div className="flex items-center text-xs text-green-600 mt-1">
                                     <ArrowUpRight className="w-3 h-3 mr-1" />
                                     <span>+8.4% ce mois</span>
@@ -129,7 +171,7 @@ export default function AdminDashboard() {
                     <CardContent className="h-[350px]">
                         <ResponsiveContainer width="100%" height="100%">
                             <ClientOnly>
-                                <AreaChart data={adminStats.monthlyData}>
+                                <AreaChart data={monthlyData}>
                                     <defs>
                                         <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
                                             <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1} />
@@ -165,7 +207,7 @@ export default function AdminDashboard() {
                                 <div className="flex gap-3">
                                     <ShieldAlert className="w-5 h-5 text-orange-600 shrink-0" />
                                     <div>
-                                        <p className="text-sm font-semibold text-orange-900">{adminStats.pendingModeration} annonces en attente</p>
+                                        <p className="text-sm font-semibold text-orange-900">{stats.pendingModeration} annonces en attente</p>
                                         <p className="text-xs text-orange-700 mt-1">Vérifiez les nouvelles annonces signalées pour non-conformité.</p>
                                         <Button variant="link" className="p-0 h-auto text-xs font-bold text-orange-800 mt-2">Gérer les annonces</Button>
                                     </div>
@@ -221,12 +263,12 @@ export default function AdminDashboard() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {users.slice(0, 8).map((user) => (
+                                {usersList.map((user: any) => (
                                     <tr key={user.id} className="border-b transition-colors hover:bg-muted/20">
                                         <td className="p-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full bg-muted overflow-hidden">
-                                                    <Image src={user.avatar} alt={user.name} width={32} height={32} />
+                                                <div className="w-8 h-8 rounded-full bg-muted overflow-hidden relative">
+                                                    <Image src={user.image || "/placeholder.svg"} alt={user.name} fill />
                                                 </div>
                                                 <div>
                                                     <p className="font-semibold">{user.name}</p>
@@ -239,14 +281,14 @@ export default function AdminDashboard() {
                                                 {user.role}
                                             </Badge>
                                         </td>
-                                        <td className="p-4 text-muted-foreground">{user.location}</td>
+                                        <td className="p-4 text-muted-foreground">{user.location || "N/A"}</td>
                                         <td className="p-4 text-muted-foreground">
-                                            {new Date(user.joinedAt).toLocaleDateString()}
+                                            {new Date(user.createdAt).toLocaleDateString()}
                                         </td>
                                         <td className="p-4">
                                             <div className="flex items-center gap-1.5">
-                                                <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                                                <span>Actif</span>
+                                                <div className={`w-2 h-2 rounded-full ${user.emailVerified ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                                                <span>{user.emailVerified ? 'Vérifié' : 'Non vérifié'}</span>
                                             </div>
                                         </td>
                                         <td className="p-4 text-right">
@@ -258,7 +300,7 @@ export default function AdminDashboard() {
                         </table>
                     </div>
                     <div className="mt-4 flex justify-between items-center text-xs text-muted-foreground">
-                        <p>Affichage de 8 sur {adminStats.totalUsers} utilisateurs</p>
+                        <p>Affichage de {usersList.length} sur {stats.totalUsers} utilisateurs</p>
                         <div className="flex gap-2">
                             <Button variant="outline" size="sm" disabled>Précédent</Button>
                             <Button variant="outline" size="sm">Suivant</Button>
