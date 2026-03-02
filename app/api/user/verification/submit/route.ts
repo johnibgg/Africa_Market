@@ -16,13 +16,13 @@ export async function POST(req: Request) {
         // dans cet exemple (simulant une réussite d'upload).
         const userId = session.user.id as string
 
-        // Update user's verification status and requested role
+        // Update user's verification status
         await prisma.user.update({
             where: { id: userId },
             data: {
                 isVerified: false,
                 verificationStatus: "PENDING",
-                role: type as any,
+                // Remove the incorrect role assignment: role: type as any,
             }
         })
 

@@ -67,7 +67,7 @@ export function CreateListingForm() {
             return
         }
 
-        if (formData.adType === "OFFER" && user?.role !== "seller") {
+        if (formData.adType === "OFFER" && user?.role !== "SELLER") {
             toast.error("Vous devez être enregistré comme vendeur pour publier une offre.")
             return
         }
