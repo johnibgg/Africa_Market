@@ -3,7 +3,8 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Eye, EyeOff, ArrowRight } from "lucide-react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { Eye, EyeOff, ArrowRight, CheckCircle2, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -17,10 +18,31 @@ export default function LoginPage() {
   const { login } = useAuth()
   const { t } = useLanguage()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+
+  // Success and Error messages from verification
+  const success = searchParams.get("success")
+  const error = searchParams.get("error")
+
+  useEffect(() => {
+    if (success === "EmailVerified") {
+      toast.success("Votre email a été vérifié avec succès ! Vous pouvez maintenant vous connecter.")
+    }
+    if (error) {
+      const errorMessages: Record<string, string> = {
+        MissingToken: "Le lien de vérification est manquant.",
+        InvalidToken: "Le lien de vérification est invalide ou a déjà été utilisé.",
+        TokenExpired: "Le lien de vérification a expiré.",
+        EmailNotFound: "L'utilisateur associé à ce lien n'existe plus.",
+        ServerError: "Une erreur est survenue lors de la vérification."
+      }
+      toast.error(errorMessages[error] || "Une erreur est survenue.")
+    }
+  }, [success, error])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()

@@ -37,8 +37,28 @@ export async function POST(req: Request) {
             }
         })
 
+        // Generate and send verification email
+        const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        const expires = new Date(Date.now() + 3600 * 1000); // 1 hour
+
+        await prisma.verificationToken.create({
+            data: {
+                email,
+                token,
+                expires
+            }
+        });
+
+        try {
+            const { sendVerificationEmail } = await import("@/lib/mail");
+            await sendVerificationEmail(email, token);
+        } catch (mailError) {
+            console.error("FAILED_TO_SEND_VERIFICATION_EMAIL", mailError);
+            // We don't fail the registration if email fails, but we log it
+        }
+
         return NextResponse.json(
-            { message: "Utilisateur créé avec succès", userId: user.id },
+            { message: "Un email de vérification a été envoyé pour activer votre compte.", userId: user.id },
             { status: 201 }
         )
     } catch (error) {
