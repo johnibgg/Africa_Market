@@ -85,12 +85,13 @@ model User {
 }
 
 model Category {
-  id       String    @id @default(cuid())
-  name     String
-  nameFr   String
-  slug     String    @unique
-  icon     String?
-  listings Listing[]
+  id         String    @id @default(cuid())
+  name       String
+  nameFr     String
+  slug       String    @unique
+  icon       String?
+  isApproved Boolean   @default(true)
+  listings   Listing[]
 }
 
 model Listing {

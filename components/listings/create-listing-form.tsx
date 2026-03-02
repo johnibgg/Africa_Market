@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge"
 import { MediaUpload } from "./media-upload"
 import { Check, ChevronRight, ChevronLeft, Package, Briefcase, Search, Upload, Info } from "lucide-react"
+import { useAuth } from "@/lib/context/auth-context"
 import { toast } from "sonner"
 
 const STEPS = [
@@ -36,7 +37,9 @@ export function CreateListingForm() {
         quartier: "",
         images: [] as File[],
         videos: [] as File[],
+        customCategory: "",
     })
+    const { user } = useAuth()
 
     useEffect(() => {
         const fetchCategories = async () => {
@@ -59,8 +62,13 @@ export function CreateListingForm() {
     const prevStep = () => setStep(step - 1)
 
     const handleSubmit = async () => {
-        if (!formData.title || !formData.price || !formData.categoryId) {
+        if (!formData.title || !formData.price || (!formData.categoryId && !formData.customCategory)) {
             toast.error("Veuillez remplir tous les champs obligatoires.")
+            return
+        }
+
+        if (formData.adType === "OFFER" && user?.role !== "seller") {
+            toast.error("Vous devez être enregistré comme vendeur pour publier une offre.")
             return
         }
 
@@ -140,8 +148,8 @@ export function CreateListingForm() {
                                 <button
                                     onClick={() => setFormData({ ...formData, adType: "OFFER" })}
                                     className={`p-6 rounded-2xl border-2 transition-all text-left flex flex-col gap-3 group ${formData.adType === "OFFER"
-                                            ? "border-teal-600 bg-teal-50 shadow-inner"
-                                            : "border-muted hover:border-teal-200"
+                                        ? "border-teal-600 bg-teal-50 shadow-inner"
+                                        : "border-muted hover:border-teal-200"
                                         }`}
                                 >
                                     <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${formData.adType === "OFFER" ? "bg-teal-600 text-white" : "bg-muted text-muted-foreground group-hover:bg-teal-100 group-hover:text-teal-600"
@@ -157,8 +165,8 @@ export function CreateListingForm() {
                                 <button
                                     onClick={() => setFormData({ ...formData, adType: "WANTED" })}
                                     className={`p-6 rounded-2xl border-2 transition-all text-left flex flex-col gap-3 group ${formData.adType === "WANTED"
-                                            ? "border-orange-500 bg-orange-50 shadow-inner"
-                                            : "border-muted hover:border-orange-200"
+                                        ? "border-orange-500 bg-orange-50 shadow-inner"
+                                        : "border-muted hover:border-orange-200"
                                         }`}
                                 >
                                     <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${formData.adType === "WANTED" ? "bg-orange-500 text-white" : "bg-muted text-muted-foreground group-hover:bg-orange-100 group-hover:text-orange-500"
@@ -205,9 +213,23 @@ export function CreateListingForm() {
                                                     {cat.nameFr}
                                                 </SelectItem>
                                             ))}
+                                            <SelectItem value="other">Autre (préciser...)</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
+
+                                {formData.categoryId === "other" && (
+                                    <div className="space-y-2">
+                                        <Label htmlFor="customCategory">Nom de la nouvelle catégorie</Label>
+                                        <Input
+                                            id="customCategory"
+                                            placeholder="Ex: Équipement Agricole"
+                                            className="h-12 rounded-xl border-2"
+                                            value={formData.customCategory}
+                                            onChange={(e) => setFormData({ ...formData, customCategory: e.target.value })}
+                                        />
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}

@@ -16,8 +16,26 @@ export async function POST(req: Request) {
             return NextResponse.json({ message: "Vous devez être vendeur pour publier une offre. Vous pouvez cependant publier une annonce de recherche." }, { status: 403 })
         }
 
-        if (!title || !price || !categoryId) {
+        if (!title || !price || (!categoryId && !body.customCategory)) {
             return NextResponse.json({ message: "Champs obligatoires manquants" }, { status: 400 })
+        }
+
+        let finalCategoryId = categoryId
+
+        // Si une catégorie personnalisée est fournie
+        if (body.customCategory && !categoryId) {
+            const slug = body.customCategory.toLowerCase().replace(/ /g, "-")
+            const newCategory = await prisma.category.upsert({
+                where: { slug: slug },
+                update: {},
+                create: {
+                    name: body.customCategory,
+                    nameFr: body.customCategory,
+                    slug: slug,
+                    isApproved: false
+                }
+            })
+            finalCategoryId = newCategory.id
         }
 
         // Create the listing
@@ -26,7 +44,7 @@ export async function POST(req: Request) {
                 title,
                 description,
                 price: parseFloat(price),
-                categoryId,
+                categoryId: finalCategoryId,
                 sellerId: session.user.id as string,
                 images: images || [],
                 videoUrls: videoUrls || [],

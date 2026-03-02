@@ -58,10 +58,10 @@ export function Header() {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-            <Store className="h-5 w-5 text-primary-foreground" />
+          <div className="flex items-center justify-center">
+            <img src="/logo.png" alt="AfricaMarket" className="h-10 w-auto object-contain" />
           </div>
-          <span className="text-xl font-bold text-foreground">
+          <span className="text-xl font-bold text-foreground hidden sm:inline-block">
             Africa<span className="text-primary">Market</span>
           </span>
         </Link>
@@ -153,7 +153,15 @@ export function Header() {
                     </Link>
                   </DropdownMenuItem>
                 )}
-                {user?.verificationStatus !== "verified" && (
+                {user?.role === "buyer" && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/auth/verify" className="flex items-center gap-2 text-teal-600 font-medium">
+                      <Store className="h-4 w-4" />
+                      Devenir Vendeur
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                {user?.verificationStatus !== "verified" && user?.role !== "buyer" && (
                   <DropdownMenuItem asChild>
                     <Link href="/auth/verify" className="flex items-center gap-2 text-teal-600 font-medium">
                       <ShieldCheck className="h-4 w-4" />

@@ -32,7 +32,7 @@ export async function POST(req: Request) {
                 email,
                 password: hashedPassword,
                 role,
-                // If professional role, set status to pending
+                isVerified: false,
                 verificationStatus: role === "BUYER" ? "NONE" : "PENDING",
             }
         })
