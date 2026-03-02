@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Eye, EyeOff, ArrowRight, CheckCircle2, AlertCircle } from "lucide-react"
@@ -13,7 +13,7 @@ import { useAuth } from "@/lib/context/auth-context"
 import { useLanguage } from "@/lib/context/language-context"
 import { toast } from "sonner"
 
-export default function LoginPage() {
+function LoginContent() {
   const { login } = useAuth()
   const { t } = useLanguage()
   const router = useRouter()
@@ -132,5 +132,17 @@ export default function LoginPage() {
         </Card>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   )
 }
