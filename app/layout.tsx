@@ -15,21 +15,8 @@ export const metadata: Metadata = {
   description: 'La marketplace de reference au Benin pour acheter, vendre et proposer vos produits et services locaux.',
   keywords: ['marketplace', 'Benin', 'Cotonou', 'acheter', 'vendre', 'services', 'produits', 'artisanat', 'Afrique'],
   icons: {
-    icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
-    ],
-    apple: '/apple-icon.png',
+    icon: '/logo.png',
+    apple: '/logo.png',
   },
 }
 
