@@ -51,11 +51,11 @@ export function Header() {
       case "SELLER":
         return "/dashboard/seller"
       case "ADMIN":
-        return "/admin"
+        return "/dashboard/admin"
       case "DELIVERY":
         return "/dashboard/partner"
       default:
-        return "/dashboard/BUYER"
+        return "/dashboard/buyer"
     }
   }
 
@@ -185,9 +185,11 @@ export function Header() {
             </DropdownMenu>
           ) : hasMounted ? (
             <div className="hidden items-center gap-2 sm:flex">
-              <Button variant="ghost" size="sm" onClick={() => login("buyer")}>
-                {t("nav.login")}
-              </Button>
+              <Link href="/auth/login">
+                <Button variant="ghost" size="sm">
+                  {t("nav.login")}
+                </Button>
+              </Link>
               <Link href="/auth/register">
                 <Button size="sm">{t("nav.register")}</Button>
               </Link>

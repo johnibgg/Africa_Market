@@ -44,6 +44,16 @@ export async function GET() {
             take: 10
         })
 
+        // Real counts for moderation and verification
+        const pendingVerificationCount = await prisma.user.count({
+            where: { verificationStatus: "PENDING" }
+        })
+        const pendingModerationCount = await prisma.listing.count({
+            where: { status: "PENDING" }
+        })
+        // Mocking disputes since we don't have a Dispute model yet
+        const disputesCount = 3
+
         return NextResponse.json({
             stats: {
                 totalUsers,
@@ -52,7 +62,9 @@ export async function GET() {
                 totalRevenue: totalRevenue._sum.total || 0,
                 newUsersToday,
                 newListingsToday,
-                pendingModeration: 0 // Mock for now
+                pendingModeration: pendingModerationCount,
+                pendingVerification: pendingVerificationCount,
+                openDisputes: disputesCount
             },
             users,
             // Add monthly data mock for charts since we don't have historical aggregation yet

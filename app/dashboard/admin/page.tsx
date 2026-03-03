@@ -217,7 +217,7 @@ export default function AdminDashboard() {
                                 <div className="flex gap-3">
                                     <CheckCircle className="w-5 h-5 text-blue-600 shrink-0" />
                                     <div>
-                                        <p className="text-sm font-semibold text-blue-900">8 demandes de vérification</p>
+                                        <p className="text-sm font-semibold text-blue-900">{stats.pendingVerification} demandes de vérification</p>
                                         <p className="text-xs text-blue-700 mt-1">Vendeurs en attente de badge de certification.</p>
                                         <Button variant="link" className="p-0 h-auto text-xs font-bold text-blue-800 mt-2">Vérifier les profils</Button>
                                     </div>
@@ -227,7 +227,7 @@ export default function AdminDashboard() {
                                 <div className="flex gap-3">
                                     <XCircle className="w-5 h-5 text-red-600 shrink-0" />
                                     <div>
-                                        <p className="text-sm font-semibold text-red-900">3 Litiges ouverts</p>
+                                        <p className="text-sm font-semibold text-red-900">{stats.openDisputes} Litiges ouverts</p>
                                         <p className="text-xs text-red-700 mt-1">Conflits entre acheteurs et vendeurs à résoudre.</p>
                                         <Button variant="link" className="p-0 h-auto text-xs font-bold text-red-800 mt-2">Ouvrir les litiges</Button>
                                     </div>

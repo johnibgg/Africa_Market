@@ -140,16 +140,17 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
             </Button>
           ) : (
             <>
-              <Button
-                variant="ghost"
-                className="w-full justify-start gap-3"
-                onClick={() => { login("buyer"); onClose() }}
-              >
-                <LogIn className="h-4 w-4" />
-                {t("nav.login")}
-              </Button>
-              <Link href="/auth/register" onClick={onClose}>
-                <Button className="w-full justify-start gap-3">
+              <Link href="/auth/login" onClick={onClose} className="w-full">
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start gap-3"
+                >
+                  <LogIn className="h-4 w-4" />
+                  {t("nav.login")}
+                </Button>
+              </Link>
+              <Link href="/auth/register" onClick={onClose} className="w-full">
+                <Button className="w-full justify-start gap-3 mt-1">
                   <UserPlus className="h-4 w-4" />
                   {t("nav.register")}
                 </Button>
