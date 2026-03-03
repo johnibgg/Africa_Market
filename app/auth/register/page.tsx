@@ -54,8 +54,8 @@ export default function RegisterPage() {
 
             // Auto login after registration
             await login({ email, password })
-            router.push("/")
             router.refresh()
+            router.push("/")
         } catch (error: any) {
             toast.error(error.message)
         } finally {

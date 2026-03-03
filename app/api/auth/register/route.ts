@@ -33,7 +33,7 @@ export async function POST(req: Request) {
                 password: hashedPassword,
                 role,
                 isVerified: false,
-                verificationStatus: role === "BUYER" ? "NONE" : "PENDING",
+                verificationStatus: "NONE",
             }
         })
 
