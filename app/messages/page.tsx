@@ -87,8 +87,12 @@ export default function MessagesPage() {
                         return {
                             ...c,
                             lastMessage: {
-                                content,
-                                timestamp: new Date().toISOString()
+                                id: newMessage.id,
+                                senderId: newMessage.senderId,
+                                receiverId: newMessage.receiverId,
+                                content: content,
+                                timestamp: new Date().toISOString(),
+                                isRead: false
                             }
                         }
                     }
