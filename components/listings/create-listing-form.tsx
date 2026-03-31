@@ -45,8 +45,12 @@ export function CreateListingForm() {
         const fetchCategories = async () => {
             try {
                 const res = await fetch("/api/categories")
-                const data = await res.json()
-                setCategories(data)
+                if (res.ok) {
+                    const data = await res.json()
+                    setCategories(Array.isArray(data) ? data : [])
+                } else {
+                    console.error("Failed to fetch categories, status:", res.status)
+                }
             } catch (err) {
                 console.error("Failed to fetch categories", err)
             }
@@ -157,8 +161,8 @@ export function CreateListingForm() {
                                         <Package className="w-6 h-6" />
                                     </div>
                                     <div>
-                                        <p className="font-bold text-lg">Je propose</p>
-                                        <p className="text-xs text-muted-foreground">Un produit ou un service à vendre/offrir.</p>
+                                        <div className="font-bold text-lg">Je propose</div>
+                                        <div className="text-xs text-muted-foreground">Un produit ou un service à vendre/offrir.</div>
                                     </div>
                                 </button>
 
@@ -174,8 +178,8 @@ export function CreateListingForm() {
                                         <Briefcase className="w-6 h-6" />
                                     </div>
                                     <div>
-                                        <p className="font-bold text-lg">Je cherche</p>
-                                        <p className="text-xs text-muted-foreground">Un produit ou service dont j'ai besoin.</p>
+                                        <div className="font-bold text-lg">Je cherche</div>
+                                        <div className="text-xs text-muted-foreground">Un produit ou service dont j'ai besoin.</div>
                                     </div>
                                 </button>
                             </div>
