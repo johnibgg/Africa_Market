@@ -4,7 +4,7 @@ import { use, useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import {
-  MapPin, Eye, Heart, Share2, BadgeCheck, Truck,
+  MapPin, Eye, Heart, Share2, BadgeCheck, Truck, Store,
   MessageSquare, ShoppingCart, Zap, Star, ArrowLeft
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -242,15 +242,24 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
                         </Avatar>
                         <div>
                           <div className="flex items-center gap-1">
-                            <Link href={`/profile/${seller.id}`} className="font-semibold text-foreground hover:text-primary text-sm">{seller.name}</Link>
+                            <Link href={seller.shopSlug ? `/boutique/${seller.shopSlug}` : "#"} className="font-semibold text-foreground hover:text-primary text-sm">{seller.name}</Link>
                             {seller.isVerified && <BadgeCheck className="h-4 w-4 text-teal-600" />}
                           </div>
                           {seller.shopName && <p className="text-xs text-muted-foreground">{seller.shopName}</p>}
                         </div>
                       </div>
-                      <Button variant="outline" className="mt-4 w-full rounded-xl" asChild>
-                        <Link href="/messages"><MessageSquare className="mr-2 h-4 w-4" />{t("listing.contact_seller")}</Link>
-                      </Button>
+                      <div className="flex flex-col gap-2 mt-4">
+                        <Button variant="outline" className="w-full rounded-xl" asChild>
+                          <Link href="/messages"><MessageSquare className="mr-2 h-4 w-4" />{t("listing.contact_seller")}</Link>
+                        </Button>
+                        {seller.shopSlug && (
+                          <Button variant="default" className="w-full rounded-xl bg-teal-600 hover:bg-teal-700" asChild>
+                            <Link href={`/boutique/${seller.shopSlug}`}>
+                              <Store className="mr-2 h-4 w-4" /> Visiter la boutique
+                            </Link>
+                          </Button>
+                        )}
+                      </div>
                     </CardContent>
                   </Card>
                 )}

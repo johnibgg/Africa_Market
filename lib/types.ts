@@ -33,6 +33,7 @@ export interface User {
   listingsCount: number
   joinedAt: string
   shopName?: string
+  shopSlug?: string
   shopDescription?: string
   subscription?: "basic" | "pro" | "vip"
 }

@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Eye, EyeOff, User, Mail, Lock, ArrowRight } from "lucide-react"
+import { Eye, EyeOff, User, Mail, Lock, ArrowRight, Store } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -24,6 +24,7 @@ export default function RegisterPage() {
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
+    const [shopName, setShopName] = useState("")
     const [role, setRole] = useState<"BUYER" | "SELLER" | "DELIVERY">("BUYER")
     const [isLoading, setIsLoading] = useState(false)
 
@@ -41,7 +42,7 @@ export default function RegisterPage() {
             const res = await fetch("/api/auth/register", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name, email, password, role }),
+                body: JSON.stringify({ name, email, password, role, shopName: role === "SELLER" ? shopName : undefined }),
             })
 
             const data = await res.json()
@@ -171,8 +172,28 @@ export default function RegisterPage() {
                                     </div>
                                 </RadioGroup>
 
+                                {role === "SELLER" && (
+                                    <div className="space-y-2 mt-4 animate-in fade-in slide-in-from-top-2">
+                                        <Label htmlFor="shopName">Nom de votre boutique</Label>
+                                        <div className="relative">
+                                            <Store className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                            <Input
+                                                id="shopName"
+                                                placeholder="Ma Super Boutique"
+                                                className="pl-10"
+                                                value={shopName}
+                                                onChange={(e) => setShopName(e.target.value)}
+                                                required={role === "SELLER"}
+                                            />
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">
+                                            Ce nom sera utilisé pour créer le lien public de votre espace vendeur.
+                                        </p>
+                                    </div>
+                                )}
+
                                 {role !== "BUYER" && (
-                                    <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded border border-amber-100 mt-2">
+                                    <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded border border-amber-100 mt-4">
                                         {role === "SELLER"
                                             ? "En tant que vendeur, vous devrez valider votre identité avant de publier vos produits."
                                             : "En tant que livreur, une vérification de vos documents de transport sera nécessaire."}

@@ -48,13 +48,23 @@ export async function PATCH(req: Request) {
         }
 
         const body = await req.json()
-        const { name, shopName, shopDescription, bio, location, quartier, phone } = body
+        const { name, shopName, shopSlug, shopDescription, bio, location, quartier, phone } = body
+
+        if (shopSlug) {
+            const existing = await prisma.user.findFirst({
+                where: { shopSlug, NOT: { id: session.user.id as string } }
+            })
+            if (existing) {
+                return NextResponse.json({ message: "Ce lien de boutique est déjà pris." }, { status: 400 })
+            }
+        }
 
         const updatedUser = await prisma.user.update({
             where: { id: session.user.id as string },
             data: {
                 name,
                 shopName,
+                shopSlug: shopSlug || undefined,
                 shopDescription,
                 bio,
                 location,

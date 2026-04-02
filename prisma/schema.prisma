@@ -65,6 +65,7 @@ model User {
   isVerified         Boolean            @default(false)
   verificationStatus VerificationStatus @default(NONE)
   shopName           String?
+  shopSlug           String?            @unique
   shopDescription    String?
   joinedAt           DateTime           @default(now())
 

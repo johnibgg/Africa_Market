@@ -184,7 +184,6 @@ export default function ProfilePage() {
                                                     { id: "name", label: "Nom complet", key: "name" },
                                                     { id: "phone", label: "Téléphone", key: "phone" },
                                                     { id: "location", label: "Localisation", key: "location" },
-                                                    { id: "shopName", label: "Nom de boutique", key: "shopName" },
                                                 ].map(({ id, label, key }) => (
                                                     <div key={id} className="space-y-2">
                                                         <Label htmlFor={id}>{label}</Label>
@@ -194,6 +193,22 @@ export default function ProfilePage() {
                                                             readOnly={!isEditing}
                                                             onChange={(e) => setProfile({ ...profile, [key]: e.target.value })}
                                                             className={!isEditing ? "bg-muted cursor-default focus-visible:ring-0" : ""}
+                                                        />
+                                                    </div>
+                                                ))}
+                                                {profile.role === "SELLER" && [
+                                                    { id: "shopName", label: "Nom de boutique", key: "shopName" },
+                                                    { id: "shopSlug", label: "Lien public (slug)", key: "shopSlug" },
+                                                ].map(({ id, label, key }) => (
+                                                    <div key={id} className="space-y-2">
+                                                        <Label htmlFor={id}>{label}</Label>
+                                                        <Input
+                                                            id={id}
+                                                            value={profile[key] || ""}
+                                                            readOnly={!isEditing}
+                                                            onChange={(e) => setProfile({ ...profile, [key]: e.target.value })}
+                                                            className={!isEditing ? "bg-muted cursor-default focus-visible:ring-0" : ""}
+                                                            placeholder={id === "shopSlug" ? "nom-de-boutique" : ""}
                                                         />
                                                     </div>
                                                 ))}
@@ -208,6 +223,19 @@ export default function ProfilePage() {
                                                     className={`min-h-[100px] ${!isEditing ? "bg-muted cursor-default focus-visible:ring-0" : ""}`}
                                                 />
                                             </div>
+                                            {profile.role === "SELLER" && (
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="shopDescription">Description détaillée de la boutique</Label>
+                                                    <Textarea
+                                                        id="shopDescription"
+                                                        value={profile.shopDescription || ""}
+                                                        readOnly={!isEditing}
+                                                        onChange={(e) => setProfile({ ...profile, shopDescription: e.target.value })}
+                                                        className={`min-h-[100px] ${!isEditing ? "bg-muted cursor-default focus-visible:ring-0" : ""}`}
+                                                        placeholder="Parlez de votre boutique, vos valeurs, vos produits..."
+                                                    />
+                                                </div>
+                                            )}
                                         </CardContent>
                                         {isEditing && (
                                             <CardFooter className="flex justify-end gap-3 bg-muted/30 p-4 border-t">

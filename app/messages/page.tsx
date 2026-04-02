@@ -21,9 +21,10 @@ export default function MessagesPage() {
                 const res = await fetch("/api/conversations")
                 if (res.ok) {
                     const data = await res.json()
-                    setConversations(data)
-                    if (data.length > 0 && !activeConversationId) {
-                        setActiveConversationId(data[0].id)
+                    const safeData = Array.isArray(data) ? data : []
+                    setConversations(safeData)
+                    if (safeData.length > 0 && !activeConversationId) {
+                        setActiveConversationId(safeData[0].id)
                     }
                 }
             } catch (err) {
@@ -46,7 +47,8 @@ export default function MessagesPage() {
                 const res = await fetch(`/api/messages?userId=${activeConversationId}`)
                 if (res.ok) {
                     const data = await res.json()
-                    setMessages(data)
+                    const safeData = Array.isArray(data) ? data : []
+                    setMessages(safeData)
                 }
             } catch (err) {
                 console.error("Error fetching messages", err)

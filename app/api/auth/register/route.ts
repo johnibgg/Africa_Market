@@ -4,7 +4,7 @@ import prisma from "@/lib/prisma"
 
 export async function POST(req: Request) {
     try {
-        const { name, email, password, role } = await req.json()
+        const { name, email, password, role, shopName } = await req.json()
 
         if (!email || !password || !role) {
             return NextResponse.json(
@@ -26,6 +26,23 @@ export async function POST(req: Request) {
 
         const hashedPassword = await bcrypt.hash(password, 10)
 
+        let finalShopSlug = null
+        if (role === "SELLER" && shopName) {
+            let baseSlug = shopName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '')
+            let slugUnique = false
+            let counter = 0
+            while (!slugUnique) {
+                const checkSlug = counter === 0 ? baseSlug : `${baseSlug}-${counter}`
+                const existingShop = await prisma.user.findUnique({ where: { shopSlug: checkSlug } })
+                if (!existingShop) {
+                    finalShopSlug = checkSlug
+                    slugUnique = true
+                } else {
+                    counter++
+                }
+            }
+        }
+
         const user = await prisma.user.create({
             data: {
                 name,
@@ -34,6 +51,8 @@ export async function POST(req: Request) {
                 role,
                 isVerified: false,
                 verificationStatus: "NONE",
+                shopName: role === "SELLER" ? shopName : null,
+                shopSlug: finalShopSlug,
             }
         })
 
