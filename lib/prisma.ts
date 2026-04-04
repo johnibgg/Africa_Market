@@ -1,12 +1,14 @@
 import { PrismaClient } from "@prisma/client"
+import { PrismaPg } from "@prisma/adapter-pg"
+import { Pool } from "pg"
 
 const prismaClientSingleton = () => {
-    // Provide a fallback URL during build to satisfy Prisma's non-empty datasource check
-    const url = process.env.DATABASE_URL || "postgresql://dummy:dummy@localhost:5432/db"
+    const connectionString = process.env.DATABASE_URL || "postgresql://not-set:not-set@localhost:5432/db"
     
-    return new PrismaClient({
-        datasourceUrl: url,
-    } as any)
+    const pool = new Pool({ connectionString })
+    const adapter = new PrismaPg(pool)
+    
+    return new PrismaClient({ adapter })
 }
 
 declare global {
