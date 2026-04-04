@@ -2,7 +2,8 @@ import { NextResponse } from "next/server"
 import { auth } from "@/auth"
 import prisma from "@/lib/prisma"
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params;
     try {
         const session = await auth()
         if (!session || (session.user as any).role !== "ADMIN") {
@@ -13,7 +14,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         const { status } = body
 
         const withdrawal = await prisma.withdrawal.findUnique({
-            where: { id: params.id }
+            where: { id }
         })
 
         if (!withdrawal) {
@@ -24,7 +25,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         if (status === "REJECTED" && withdrawal.status !== "REJECTED") {
             await prisma.$transaction([
                 prisma.withdrawal.update({
-                    where: { id: params.id },
+                    where: { id },
                     data: { status: "REJECTED" }
                 }),
                 prisma.user.update({
@@ -38,7 +39,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         }
 
         const updatedWithdrawal = await prisma.withdrawal.update({
-            where: { id: params.id },
+            where: { id },
             data: { status }
         })
 

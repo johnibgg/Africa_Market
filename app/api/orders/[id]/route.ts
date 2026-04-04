@@ -2,7 +2,8 @@ import { NextResponse } from "next/server"
 import { auth } from "@/auth"
 import prisma from "@/lib/prisma"
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params;
     try {
         const session = await auth()
         if (!session?.user) {
@@ -13,7 +14,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         const { status } = body
 
         const order = await prisma.order.findUnique({
-            where: { id: params.id },
+            where: { id },
             include: { 
                 items: {
                     include: {
@@ -45,7 +46,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
             // Perform transaction: update order status and update seller balances
             await prisma.$transaction([
                 prisma.order.update({
-                    where: { id: params.id },
+                    where: { id },
                     data: { status: "DELIVERED" }
                 }),
                 ...Object.entries(sellerCredits).map(([sellerId, amount]) => (
@@ -63,7 +64,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 
         // Default status update
         const updatedOrder = await prisma.order.update({
-            where: { id: params.id },
+            where: { id },
             data: { status }
         })
 
