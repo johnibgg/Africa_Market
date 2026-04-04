@@ -17,7 +17,8 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/lib/context/language-context"
-import { categories } from "@/lib/mock-data"
+import { useEffect, useState } from "react"
+import React from "react"
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Wrench,
@@ -52,6 +53,14 @@ const colorMap: Record<string, { bg: string; text: string; hover: string; ring: 
 
 export function CategoriesSection() {
   const { t, locale } = useLanguage()
+  const [categories, setCategories] = useState<any[]>([])
+
+  useEffect(() => {
+    fetch("/api/categories")
+      .then((r) => r.json())
+      .then((data) => setCategories(Array.isArray(data) ? data : []))
+      .catch(() => {})
+  }, [])
 
   return (
     <section className="px-4 py-12">

@@ -1,7 +1,11 @@
 "use client"
 
-import { formatPrice } from "@/lib/mock-data"
 import { cn } from "@/lib/utils"
+
+function formatPrice(amount: number, currency = "FCFA") {
+  return `${amount.toLocaleString("fr-FR")} ${currency}`
+}
+
 
 interface PriceDisplayProps {
   amount: number

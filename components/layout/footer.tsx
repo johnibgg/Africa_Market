@@ -6,10 +6,18 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { useLanguage } from "@/lib/context/language-context"
-import { categories } from "@/lib/mock-data"
+import { useEffect, useState } from "react"
 
 export function Footer() {
   const { t } = useLanguage()
+  const [categories, setCategories] = useState<any[]>([])
+
+  useEffect(() => {
+    fetch("/api/categories")
+      .then((r) => r.json())
+      .then((data) => setCategories(Array.isArray(data) ? data : []))
+      .catch(() => {})
+  }, [])
 
   return (
     <footer className="border-t bg-card">

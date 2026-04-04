@@ -1,6 +1,6 @@
 "use client"
 
-import { sellerDashboardStats, listings, orders, users } from "@/lib/mock-data"
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -187,7 +187,7 @@ export default function SellerDashboard() {
                         <div className="h-[300px]">
                             <ClientOnly>
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={sellerDashboardStats.monthlyData}>
+                                    <BarChart data={stats.monthlyData || []}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} />
                                         <XAxis dataKey="month" axisLine={false} tickLine={false} />
                                         <YAxis axisLine={false} tickLine={false} tickFormatter={(val) => `${val / 1000}k`} />

@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { listings } from "@/lib/mock-data"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
@@ -15,7 +14,8 @@ import {
     VolumeX,
     User,
     ChevronDown,
-    ChevronUp
+    ChevronUp,
+    Loader2
 } from "lucide-react"
 import Link from "next/link"
 import NextImage from "next/image"
@@ -23,11 +23,19 @@ import { useRouter } from "next/navigation"
 
 export default function VideoFeedPage() {
     const router = useRouter()
-    // We'll use listings that have images and simulate them as videos
-    const videoListings = listings.slice(0, 5)
+    const [videoListings, setVideoListings] = useState<any[]>([])
+    const [loadingVideos, setLoadingVideos] = useState(true)
     const [currentIndex, setCurrentIndex] = useState(0)
     const [isPlaying, setIsPlaying] = useState(true)
     const [isMuted, setIsMuted] = useState(true)
+
+    useEffect(() => {
+        fetch("/api/listings?limit=10")
+            .then(r => r.json())
+            .then(data => setVideoListings(Array.isArray(data) ? data : []))
+            .catch(() => {})
+            .finally(() => setLoadingVideos(false))
+    }, [])
 
     const handleNext = () => {
         if (currentIndex < videoListings.length - 1) {
@@ -42,6 +50,23 @@ export default function VideoFeedPage() {
     }
 
     const currentItem = videoListings[currentIndex]
+
+    if (loadingVideos) {
+        return (
+            <div className="fixed inset-0 bg-black z-50 flex items-center justify-center">
+                <Loader2 className="w-10 h-10 text-teal-400 animate-spin" />
+            </div>
+        )
+    }
+
+    if (!currentItem) {
+        return (
+            <div className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center gap-4">
+                <p className="text-white text-lg font-bold">Aucune annonce disponible pour le moment.</p>
+                <Link href="/" className="text-teal-400 underline">Retour à l&apos;accueil</Link>
+            </div>
+        )
+    }
 
     return (
         <div className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center">

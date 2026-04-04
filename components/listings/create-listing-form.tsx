@@ -8,9 +8,8 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { MediaUpload } from "./media-upload"
-import { Check, ChevronRight, ChevronLeft, Package, Briefcase, Search, Upload, Info } from "lucide-react"
+import { Check, ChevronRight, ChevronLeft, Package, Briefcase, Search, Upload, Info, ShieldAlert, Store } from "lucide-react"
 import { useAuth } from "@/lib/context/auth-context"
 import { toast } from "sonner"
 
@@ -24,23 +23,25 @@ export function CreateListingForm() {
     const router = useRouter()
     const [step, setStep] = useState(1)
     const [loading, setLoading] = useState(false)
+    const [upgrading, setUpgrading] = useState(false)
     const [categories, setCategories] = useState<any[]>([])
+    const { user, isAuthenticated } = useAuth()
 
     const [formData, setFormData] = useState({
         title: "",
         description: "",
         price: "",
         categoryId: "",
-        type: "PRODUCT", // PRODUCT, SERVICE
-        adType: "OFFER", // OFFER, WANTED
+        type: "PRODUCT" as "PRODUCT" | "SERVICE",
+        adType: "OFFER" as "OFFER" | "WANTED",
         location: "Cotonou",
         quartier: "",
         images: [] as File[],
         videos: [] as File[],
         customCategory: "",
     })
-    const { user } = useAuth()
 
+    // Fetch real categories from DB
     useEffect(() => {
         const fetchCategories = async () => {
             try {
@@ -48,8 +49,6 @@ export function CreateListingForm() {
                 if (res.ok) {
                     const data = await res.json()
                     setCategories(Array.isArray(data) ? data : [])
-                } else {
-                    console.error("Failed to fetch categories, status:", res.status)
                 }
             } catch (err) {
                 console.error("Failed to fetch categories", err)
@@ -62,49 +61,123 @@ export function CreateListingForm() {
         setFormData(prev => ({ ...prev, images: media.images, videos: media.videos }))
     }
 
-    const nextStep = () => setStep(step + 1)
-    const prevStep = () => setStep(step - 1)
+    // --- ROLE CHECK ---
+    const isBuyer = isAuthenticated && user && (user as any).role === "BUYER"
+    const isSellerOrAbove = isAuthenticated && user && ((user as any).role === "SELLER" || (user as any).role === "ADMIN")
+
+    const handleUpgradeToSeller = async () => {
+        setUpgrading(true)
+        try {
+            const res = await fetch("/api/user/upgrade", { method: "POST" })
+            const data = await res.json()
+            if (res.ok) {
+                toast.success("Votre compte a été mis à jour ! Vous êtes maintenant Vendeur. Rechargez la page.")
+                setTimeout(() => router.refresh(), 1500)
+            } else {
+                toast.error(data.message || "Erreur lors de la mise à jour.")
+            }
+        } catch {
+            toast.error("Erreur réseau.")
+        } finally {
+            setUpgrading(false)
+        }
+    }
+
+    // Step nav — no blocking validation on step 1 (user can navigate freely)
+    const nextStep = () => {
+        if (step === 1) {
+            // Only warn, don't block
+            if (!formData.categoryId && !formData.customCategory && formData.adType === "OFFER") {
+                toast.info("Pensez à choisir une catégorie avant de publier !")
+            }
+        }
+        setStep(s => Math.min(s + 1, 3))
+    }
+    const prevStep = () => setStep(s => Math.max(s - 1, 1))
 
     const handleSubmit = async () => {
-        if (!formData.title || !formData.price || (!formData.categoryId && !formData.customCategory)) {
-            toast.error("Veuillez remplir tous les champs obligatoires.")
+        if (!formData.title || !formData.price) {
+            toast.error("Le titre et le prix sont obligatoires.")
             return
         }
-
-        if (formData.adType === "OFFER" && user?.role !== "SELLER") {
-            toast.error("Vous devez être enregistré comme vendeur pour publier une offre.")
+        if (!formData.categoryId && !formData.customCategory) {
+            toast.error("Veuillez choisir une catégorie.")
             return
         }
 
         setLoading(true)
         try {
-            // In a real app, you'd upload files to S3/Cloudinary first
-            // Here we assume the API handles it or we send base64 (simplified)
-            // For now, let's just send the text data
             const res = await fetch("/api/listings", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     ...formData,
                     price: parseFloat(formData.price),
-                    // In a simulation, we'd add mock URLs if no real upload exists
                     images: formData.images.map(() => "https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1000&auto=format&fit=crop"),
-                    videoUrls: formData.videos.map(() => "https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4")
+                    videoUrls: formData.videos.map(() => ""),
                 })
             })
 
+            const data = await res.json()
             if (res.ok) {
                 toast.success("Annonce publiée avec succès !")
                 router.push("/dashboard/seller")
             } else {
-                const data = await res.json()
                 toast.error(data.message || "Erreur lors de la publication.")
             }
-        } catch (err) {
+        } catch {
             toast.error("Une erreur est survenue.")
         } finally {
             setLoading(false)
         }
+    }
+
+    // --- BUYER BLOCKER (only for OFFER mode) ---
+    if (isBuyer && formData.adType === "OFFER") {
+        return (
+            <div className="max-w-xl mx-auto py-8 px-4">
+                <Card className="border-orange-200 shadow-2xl">
+                    <CardHeader className="text-center">
+                        <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <ShieldAlert className="w-8 h-8 text-orange-500" />
+                        </div>
+                        <CardTitle className="text-2xl font-black text-orange-900">Compte Vendeur Requis</CardTitle>
+                        <CardDescription className="text-base mt-2 text-orange-700">
+                            Pour publier une offre, vous devez être inscrit comme <strong>Vendeur</strong>.
+                            Votre compte est actuellement un compte <strong>Acheteur</strong>.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="p-4 bg-teal-50 rounded-xl border border-teal-100">
+                            <p className="text-sm text-teal-800 font-medium">
+                                ✅ Avantages de devenir Vendeur :
+                            </p>
+                            <ul className="mt-2 text-sm text-teal-700 space-y-1 list-disc list-inside">
+                                <li>Publiez vos produits et services</li>
+                                <li>Créez votre boutique personnalisée</li>
+                                <li>Recevez des commandes et des messages</li>
+                            </ul>
+                        </div>
+                        <Button
+                            onClick={handleUpgradeToSeller}
+                            disabled={upgrading}
+                            className="w-full h-12 rounded-xl bg-teal-600 hover:bg-teal-700 font-bold text-white shadow-lg"
+                        >
+                            <Store className="mr-2 h-5 w-5" />
+                            {upgrading ? "Mise à jour..." : "Devenir Vendeur Gratuitement"}
+                        </Button>
+                        <Button
+                            variant="outline"
+                            className="w-full h-12 rounded-xl"
+                            onClick={() => setFormData(f => ({ ...f, adType: "WANTED" }))}
+                        >
+                            <Briefcase className="mr-2 h-5 w-5 text-orange-500" />
+                            Publier une annonce &ldquo;Je cherche&rdquo; à la place
+                        </Button>
+                    </CardContent>
+                </Card>
+            </div>
+        )
     }
 
     return (
@@ -150,6 +223,7 @@ export function CreateListingForm() {
                         <div className="space-y-8">
                             <div className="grid grid-cols-2 gap-4">
                                 <button
+                                    type="button"
                                     onClick={() => setFormData({ ...formData, adType: "OFFER" })}
                                     className={`p-6 rounded-2xl border-2 transition-all text-left flex flex-col gap-3 group ${formData.adType === "OFFER"
                                         ? "border-teal-600 bg-teal-50 shadow-inner"
@@ -167,6 +241,7 @@ export function CreateListingForm() {
                                 </button>
 
                                 <button
+                                    type="button"
                                     onClick={() => setFormData({ ...formData, adType: "WANTED" })}
                                     className={`p-6 rounded-2xl border-2 transition-all text-left flex flex-col gap-3 group ${formData.adType === "WANTED"
                                         ? "border-orange-500 bg-orange-50 shadow-inner"
@@ -179,7 +254,7 @@ export function CreateListingForm() {
                                     </div>
                                     <div>
                                         <div className="font-bold text-lg">Je cherche</div>
-                                        <div className="text-xs text-muted-foreground">Un produit ou service dont j'ai besoin.</div>
+                                        <div className="text-xs text-muted-foreground">Un produit ou service dont j&rsquo;ai besoin.</div>
                                     </div>
                                 </button>
                             </div>
@@ -187,6 +262,7 @@ export function CreateListingForm() {
                             <div className="space-y-4">
                                 <div className="flex gap-4 p-1 bg-muted rounded-xl w-fit mx-auto">
                                     <button
+                                        type="button"
                                         onClick={() => setFormData({ ...formData, type: "PRODUCT" })}
                                         className={`px-8 py-2 rounded-lg text-sm font-bold transition-all ${formData.type === "PRODUCT" ? "bg-white shadow-sm text-teal-700" : "text-muted-foreground"
                                             }`}
@@ -194,6 +270,7 @@ export function CreateListingForm() {
                                         Produit
                                     </button>
                                     <button
+                                        type="button"
                                         onClick={() => setFormData({ ...formData, type: "SERVICE" })}
                                         className={`px-8 py-2 rounded-lg text-sm font-bold transition-all ${formData.type === "SERVICE" ? "bg-white shadow-sm text-teal-700" : "text-muted-foreground"
                                             }`}
@@ -204,22 +281,26 @@ export function CreateListingForm() {
 
                                 <div className="space-y-2">
                                     <Label>Catégorie</Label>
-                                    <Select
-                                        value={formData.categoryId}
-                                        onValueChange={(val) => setFormData({ ...formData, categoryId: val })}
-                                    >
-                                        <SelectTrigger className="h-12 rounded-xl border-2 focus-visible:ring-teal-500">
-                                            <SelectValue placeholder="Choisir une catégorie" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {categories.map((cat) => (
-                                                <SelectItem key={cat.id} value={cat.id}>
-                                                    {cat.nameFr}
-                                                </SelectItem>
-                                            ))}
-                                            <SelectItem value="other">Autre (préciser...)</SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                                    {categories.length === 0 ? (
+                                        <p className="text-sm text-muted-foreground italic">Chargement des catégories...</p>
+                                    ) : (
+                                        <Select
+                                            value={formData.categoryId}
+                                            onValueChange={(val) => setFormData({ ...formData, categoryId: val })}
+                                        >
+                                            <SelectTrigger className="h-12 rounded-xl border-2 focus-visible:ring-teal-500">
+                                                <SelectValue placeholder="Choisir une catégorie" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {categories.map((cat) => (
+                                                    <SelectItem key={cat.id} value={cat.id}>
+                                                        {cat.nameFr}
+                                                    </SelectItem>
+                                                ))}
+                                                <SelectItem value="other">Autre (préciser...)</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    )}
                                 </div>
 
                                 {formData.categoryId === "other" && (
@@ -244,7 +325,7 @@ export function CreateListingForm() {
                             <div className="flex items-start gap-3 p-4 bg-teal-50 rounded-2xl border border-teal-100">
                                 <Info className="w-5 h-5 text-teal-600 mt-0.5" />
                                 <p className="text-xs text-teal-800 leading-relaxed font-medium">
-                                    Saviez-vous que les annonces avec vidéo génèrent <span className="font-black text-teal-900 border-none">3x plus d'engagement</span> ?
+                                    Saviez-vous que les annonces avec vidéo génèrent <span className="font-black text-teal-900 border-none">3x plus d&apos;engagement</span> ?
                                     Capturez votre produit en action pour rassurer vos clients.
                                 </p>
                             </div>
@@ -254,7 +335,7 @@ export function CreateListingForm() {
                     {step === 3 && (
                         <div className="space-y-6">
                             <div className="space-y-2">
-                                <Label htmlFor="title">Titre de l'annonce</Label>
+                                <Label htmlFor="title">Titre de l&rsquo;annonce *</Label>
                                 <Input
                                     id="title"
                                     placeholder="Ex: iPhone 13 Pro Max - État Neuf"
@@ -277,7 +358,7 @@ export function CreateListingForm() {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="price">Prix (FCFA)</Label>
+                                    <Label htmlFor="price">Prix (FCFA) *</Label>
                                     <Input
                                         id="price"
                                         type="number"
@@ -304,7 +385,7 @@ export function CreateListingForm() {
 
                 <CardFooter className="flex justify-between pt-6">
                     {step > 1 ? (
-                        <Button variant="outline" onClick={prevStep} className="h-12 px-8 rounded-xl border-2 border-muted-foreground/30 hover:bg-muted font-bold text-muted-foreground">
+                        <Button type="button" variant="outline" onClick={prevStep} className="h-12 px-8 rounded-xl border-2 border-muted-foreground/30 hover:bg-muted font-bold text-muted-foreground">
                             <ChevronLeft className="mr-2 w-4 h-4" /> Retour
                         </Button>
                     ) : (
@@ -312,11 +393,12 @@ export function CreateListingForm() {
                     )}
 
                     {step < 3 ? (
-                        <Button onClick={nextStep} className="h-12 px-8 rounded-xl bg-teal-600 hover:bg-teal-700 font-bold border-none shadow-lg shadow-teal-600/20">
+                        <Button type="button" onClick={nextStep} className="h-12 px-8 rounded-xl bg-teal-600 hover:bg-teal-700 font-bold border-none shadow-lg shadow-teal-600/20">
                             Suivant <ChevronRight className="ml-2 w-4 h-4" />
                         </Button>
                     ) : (
                         <Button
+                            type="button"
                             onClick={handleSubmit}
                             disabled={loading}
                             className="h-12 px-12 rounded-xl bg-teal-600 hover:bg-teal-700 font-bold border-none shadow-lg shadow-teal-600/20"
