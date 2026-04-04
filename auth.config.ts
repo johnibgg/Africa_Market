@@ -19,6 +19,7 @@ export default {
                 token.role = (user as any).role
                 token.verificationStatus = (user as any).verificationStatus
                 token.isVerified = (user as any).isVerified
+                token.createdAt = (user as any).createdAt
             }
             return token
         },
@@ -28,6 +29,7 @@ export default {
                 (session.user as any).role = token.role as string
                 (session.user as any).verificationStatus = token.verificationStatus as string
                 (session.user as any).isVerified = token.isVerified as boolean
+                (session.user as any).createdAt = token.createdAt as any
             }
             return session
         },

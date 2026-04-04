@@ -20,7 +20,32 @@ export const {
     session: { strategy: "jwt" },
     ...authConfig,
     callbacks: {
-        async session({ token, session }) {
+        async jwt({ token, user, trigger, session }) {
+            if (user) {
+                token.id = user.id
+                token.role = (user as any).role
+                token.verificationStatus = (user as any).verificationStatus
+                token.isVerified = (user as any).isVerified
+                token.createdAt = (user as any).createdAt
+            }
+
+            // Optional Sync with DB (only for updates or if sub changed)
+            if (token.sub && !user) {
+                const existingUser = await prisma.user.findUnique({
+                    where: { id: token.sub }
+                })
+
+                if (existingUser) {
+                    token.role = existingUser.role
+                    token.verificationStatus = existingUser.verificationStatus
+                    token.isVerified = existingUser.isVerified
+                    token.createdAt = existingUser.createdAt
+                }
+            }
+
+            return token
+        },
+        async session({ session, token }) {
             if (token.sub && session.user) {
                 session.user.id = token.sub
             }
@@ -32,27 +57,11 @@ export const {
             if (session.user) {
                 session.user.verificationStatus = token.verificationStatus as any
                 session.user.isVerified = token.isVerified as boolean
-                session.user.createdAt = token.createdAt as Date
+                session.user.createdAt = token.createdAt as any
             }
 
             return session
         },
-        async jwt({ token }) {
-            if (!token.sub) return token
-
-            const existingUser = await prisma.user.findUnique({
-                where: { id: token.sub }
-            })
-
-            if (!existingUser) return token
-
-            token.role = existingUser.role
-            token.verificationStatus = existingUser.verificationStatus
-            token.isVerified = existingUser.isVerified
-            token.createdAt = existingUser.createdAt
-
-            return token
-        }
     },
     providers: [
         Credentials({

@@ -153,7 +153,7 @@ function LoginContent() {
               )}
 
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Chargement..." : (showTwoFactor ? "Confirmer le code" : t("auth.login"))}
+                {isLoading ? "Chargement..." : (showTwoFactor ? "Confirmer le code" : t("auth.login_btn"))}
                 {!isLoading && <ArrowRight className="ml-2 h-4 w-4" />}
               </Button>
             </form>

@@ -92,7 +92,7 @@ export function CategoriesSection() {
             ))
           ) : categories.length === 0 ? (
             <div className="col-span-full py-8 text-center text-muted-foreground">
-              Aucune catégorie trouvée
+              {t("home.no_categories")}
             </div>
           ) : (
             categories.map((category) => {
