@@ -5,6 +5,7 @@ import { CartProvider } from '@/lib/context/cart-context'
 import { AuthProvider } from '@/lib/context/auth-context'
 import { SessionProvider } from 'next-auth/react'
 import { BottomNav } from '@/components/layout/bottom-nav'
+import { InteractiveTutorial } from '@/components/ui/interactive-tutorial'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -42,6 +43,7 @@ export default function RootLayout({
               <LanguageProvider>
                 {children}
                 <BottomNav />
+                <InteractiveTutorial />
               </LanguageProvider>
             </CartProvider>
           </AuthProvider>

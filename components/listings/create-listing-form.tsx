@@ -61,9 +61,12 @@ export function CreateListingForm() {
         setFormData(prev => ({ ...prev, images: media.images, videos: media.videos }))
     }
 
-    // --- ROLE CHECK ---
+    // --- ROLE & VERIFICATION CHECK ---
     const isBuyer = isAuthenticated && user && (user as any).role === "BUYER"
-    const isSellerOrAbove = isAuthenticated && user && ((user as any).role === "SELLER" || (user as any).role === "ADMIN")
+    const isSeller = isAuthenticated && user && (user as any).role === "SELLER"
+    const isAdmin = isAuthenticated && user && (user as any).role === "ADMIN"
+    const isVerified = isAuthenticated && user && ((user as any).isVerified || (user as any).verificationStatus === "VERIFIED")
+    const isPending = isAuthenticated && user && (user as any).verificationStatus === "PENDING"
 
     const handleUpgradeToSeller = async () => {
         setUpgrading(true)
@@ -83,56 +86,7 @@ export function CreateListingForm() {
         }
     }
 
-    // Step nav — no blocking validation on step 1 (user can navigate freely)
-    const nextStep = () => {
-        if (step === 1) {
-            // Only warn, don't block
-            if (!formData.categoryId && !formData.customCategory && formData.adType === "OFFER") {
-                toast.info("Pensez à choisir une catégorie avant de publier !")
-            }
-        }
-        setStep(s => Math.min(s + 1, 3))
-    }
-    const prevStep = () => setStep(s => Math.max(s - 1, 1))
-
-    const handleSubmit = async () => {
-        if (!formData.title || !formData.price) {
-            toast.error("Le titre et le prix sont obligatoires.")
-            return
-        }
-        if (!formData.categoryId && !formData.customCategory) {
-            toast.error("Veuillez choisir une catégorie.")
-            return
-        }
-
-        setLoading(true)
-        try {
-            const res = await fetch("/api/listings", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    ...formData,
-                    price: parseFloat(formData.price),
-                    images: formData.images.map(() => "https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1000&auto=format&fit=crop"),
-                    videoUrls: formData.videos.map(() => ""),
-                })
-            })
-
-            const data = await res.json()
-            if (res.ok) {
-                toast.success("Annonce publiée avec succès !")
-                router.push("/dashboard/seller")
-            } else {
-                toast.error(data.message || "Erreur lors de la publication.")
-            }
-        } catch {
-            toast.error("Une erreur est survenue.")
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    // --- BUYER BLOCKER (only for OFFER mode) ---
+    // --- BUYER BLOCKER ---
     if (isBuyer && formData.adType === "OFFER") {
         return (
             <div className="max-w-xl mx-auto py-8 px-4">
@@ -178,6 +132,105 @@ export function CreateListingForm() {
                 </Card>
             </div>
         )
+    }
+
+    // --- UNVERIFIED SELLER BLOCKER ---
+    if (isSeller && !isVerified && formData.adType === "OFFER") {
+        return (
+            <div className="max-w-xl mx-auto py-8 px-4">
+                <Card className="border-blue-200 shadow-2xl">
+                    <CardHeader className="text-center">
+                        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <ShieldAlert className="w-8 h-8 text-blue-500" />
+                        </div>
+                        <CardTitle className="text-2xl font-black text-blue-900">Vérification Requise</CardTitle>
+                        <CardDescription className="text-base mt-2 text-blue-700">
+                            {isPending 
+                                ? "Votre demande de vérification est en cours de traitement. Vous pourrez publier vos offres dès que votre compte sera validé."
+                                : "Pour garantir la sécurité de la communauté, les vendeurs doivent vérifier leur identité avant de publier des offres."}
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {!isPending && (
+                            <Button
+                                onClick={() => router.push("/auth/verify")}
+                                className="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-700 font-bold text-white shadow-lg"
+                            >
+                                <ShieldAlert className="mr-2 h-5 w-5" />
+                                Vérifier mon identité maintenant
+                            </Button>
+                        )}
+                        <Button
+                            variant="outline"
+                            className="w-full h-12 rounded-xl"
+                            onClick={() => setFormData(f => ({ ...f, adType: "WANTED" }))}
+                        >
+                            <Briefcase className="mr-2 h-5 w-5 text-orange-500" />
+                            Publier une annonce &ldquo;Je cherche&rdquo; à la place
+                        </Button>
+                    </CardContent>
+                </Card>
+            </div>
+        )
+    }
+
+    // Step nav — no blocking validation on step 1 (user can navigate freely)
+    const nextStep = () => {
+        if (step === 1) {
+            // Only warn, don't block
+            if (!formData.categoryId && !formData.customCategory && formData.adType === "OFFER") {
+                toast.info("Pensez à choisir une catégorie avant de publier !")
+            }
+        }
+        setStep(s => Math.min(s + 1, 3))
+    }
+    const prevStep = () => setStep(s => Math.max(s - 1, 1))
+
+    const handleSubmit = async () => {
+        if (!formData.title || !formData.price) {
+            toast.error("Le titre et le prix sont obligatoires.")
+            return
+        }
+        if (!formData.categoryId && !formData.customCategory) {
+            toast.error("Veuillez choisir une catégorie.")
+            return
+        }
+
+        setLoading(true)
+        try {
+            // --- IMAGE UPLOAD SIMULATION ---
+            // Dans une vraie app, on utiliserait Cloudinary, UploadThing ou S3 ici
+            // Ex: const uploadedImages = await Promise.all(formData.images.map(uploadFile))
+            
+            const simulatedImageUrls = formData.images.map((_, i) => 
+                `https://images.unsplash.com/photo-${1523275335684 + i}-37898b6baf30?q=80&w=1000&auto=format&fit=crop`
+            )
+            
+            const res = await fetch("/api/listings", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    ...formData,
+                    price: parseFloat(formData.price),
+                    images: simulatedImageUrls.length > 0 ? simulatedImageUrls : ["https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1000&auto=format&fit=crop"],
+                    videoUrls: formData.videos.map(() => ""), // À implémenter avec un service vidéo
+                })
+            })
+
+            const data = await res.json()
+            if (res.ok) {
+                toast.success("Annonce publiée avec succès !")
+                router.push("/dashboard/seller")
+                router.refresh()
+            } else {
+                toast.error(data.message || "Erreur lors de la publication.")
+            }
+        } catch (err) {
+            console.error(err)
+            toast.error("Une erreur réseau est survenue.")
+        } finally {
+            setLoading(false)
+        }
     }
 
     return (

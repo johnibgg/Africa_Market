@@ -89,20 +89,43 @@ export async function GET(req: Request) {
     try {
         const { searchParams } = new URL(req.url)
         const category = searchParams.get("category")
+        const categories = searchParams.get("categories")?.split(",")
         const type = searchParams.get("type")
         const adType = searchParams.get("adType")
         const query = searchParams.get("q")
         const promoted = searchParams.get("promoted")
         const sellerId = searchParams.get("sellerId")
+        const minPrice = parseFloat(searchParams.get("minPrice") || "0")
+        const maxPrice = parseFloat(searchParams.get("maxPrice") || "1000000000")
+        const minRating = parseFloat(searchParams.get("minRating") || "0")
         const limit = parseInt(searchParams.get("limit") || "20")
         const offset = parseInt(searchParams.get("offset") || "0")
 
         const where: any = { status: "ACTIVE" }
+        
         if (category) where.categoryId = category
-        if (type) where.type = type
-        if (adType) where.adType = adType
+        if (categories && categories.length > 0) {
+            where.categoryId = { in: categories }
+        }
+        
+        if (type && type !== "all") where.type = type
+        if (adType && adType !== "all") where.adType = adType
         if (promoted === "true") where.isPromoted = true
         if (sellerId) where.sellerId = sellerId
+        
+        // Price filtering
+        where.price = {
+            gte: minPrice,
+            lte: maxPrice
+        }
+        
+        // Rating filtering
+        if (minRating > 0) {
+            where.rating = {
+                gte: minRating
+            }
+        }
+
         if (query) {
             where.OR = [
                 { title: { contains: query, mode: "insensitive" } },

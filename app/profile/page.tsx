@@ -12,12 +12,15 @@ import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { User, MapPin, Calendar, Star, CheckCircle, Pencil, Save, LogOut, ShieldCheck } from "lucide-react"
+import { User, MapPin, Calendar, Star, CheckCircle, Pencil, Save, LogOut, ShieldCheck, Lock, ShieldAlert, Store, Info } from "lucide-react"
+import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { signOut } from "next-auth/react"
 import { toast } from "sonner"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
+import { Switch } from "@/components/ui/switch"
+import { Separator } from "@/components/ui/separator"
 
 export default function ProfilePage() {
     const { data: session, status } = useSession()
@@ -63,6 +66,7 @@ export default function ProfilePage() {
                     phone: profile.phone,
                     shopName: profile.shopName,
                     shopDescription: profile.shopDescription,
+                    twoFactorEnabled: profile.twoFactorEnabled,
                 })
             })
             if (res.ok) {
@@ -75,6 +79,44 @@ export default function ProfilePage() {
             toast.error("Erreur réseau.")
         } finally {
             setSaving(false)
+        }
+    }
+
+    const toggle2FA = async (enabled: boolean) => {
+        setProfile({ ...profile, twoFactorEnabled: enabled })
+        try {
+            const res = await fetch("/api/user/profile", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ twoFactorEnabled: enabled })
+            })
+            if (res.ok) {
+                toast.success(enabled ? "Double authentification activée !" : "Double authentification désactivée.")
+            } else {
+                toast.error("Erreur lors de la mise à jour.")
+                setProfile({ ...profile, twoFactorEnabled: !enabled })
+            }
+        } catch {
+            toast.error("Erreur réseau.")
+            setProfile({ ...profile, twoFactorEnabled: !enabled })
+        }
+    }
+
+    const toggleShopTheme = async (theme: "modern" | "minimal" | "vibrant" | "elegant") => {
+        setProfile({ ...profile, shopTheme: theme })
+        try {
+            const res = await fetch("/api/user/profile", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ shopTheme: theme })
+            })
+            if (res.ok) {
+                toast.success(`Thème ${theme} appliqué !`)
+            } else {
+                toast.error("Erreur lors de la mise à jour.")
+            }
+        } catch {
+            toast.error("Erreur réseau.")
         }
     }
 
@@ -167,8 +209,9 @@ export default function ProfilePage() {
                         {/* Right Column */}
                         <div className="md:col-span-2">
                             <Tabs defaultValue="info" className="w-full">
-                                <TabsList className="grid w-full grid-cols-2 mb-6 rounded-xl">
+                                <TabsList className={`grid w-full mb-6 rounded-xl ${profile.role === 'SELLER' ? 'grid-cols-3' : 'grid-cols-2'}`}>
                                     <TabsTrigger value="info">Informations</TabsTrigger>
+                                    {profile.role === "SELLER" && <TabsTrigger value="shop">Boutique</TabsTrigger>}
                                     <TabsTrigger value="security">Sécurité</TabsTrigger>
                                 </TabsList>
 
@@ -248,25 +291,124 @@ export default function ProfilePage() {
                                     </Card>
                                 </TabsContent>
 
+                                {profile.role === "SELLER" && (
+                                    <TabsContent value="shop">
+                                        <div className="space-y-6">
+                                            <Card className="rounded-2xl shadow-sm border-none bg-white">
+                                                <CardHeader>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="p-2 bg-orange-100 rounded-xl text-orange-600">
+                                                            <Store className="w-5 h-5" />
+                                                        </div>
+                                                        <div>
+                                                            <CardTitle>Personnalisation de la Boutique</CardTitle>
+                                                            <CardDescription>Choisissez le style qui correspond le mieux à votre marque.</CardDescription>
+                                                        </div>
+                                                    </div>
+                                                </CardHeader>
+                                                <CardContent className="space-y-6">
+                                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                        {[
+                                                            { id: "modern", name: "Moderne", color: "bg-teal-500", desc: "Épuré et efficace" },
+                                                            { id: "minimal", name: "Minimal", color: "bg-slate-200", desc: "Focus sur le produit" },
+                                                            { id: "vibrant", name: "Vibrant", color: "bg-indigo-500", desc: "Énergie et couleurs" },
+                                                            { id: "elegant", name: "Élégant", color: "bg-amber-600", desc: "Luxe et prestige" },
+                                                        ].map((t) => (
+                                                            <button
+                                                                key={t.id}
+                                                                onClick={() => toggleShopTheme(t.id as any)}
+                                                                className={cn(
+                                                                    "flex flex-col items-center gap-3 p-4 rounded-2xl border-2 transition-all group",
+                                                                    profile.shopTheme === t.id ? "border-teal-600 bg-teal-50" : "border-slate-100 hover:border-slate-200 bg-white"
+                                                                )}
+                                                            >
+                                                                <div className={cn("w-12 h-12 rounded-xl shadow-inner flex items-center justify-center text-white", t.color)}>
+                                                                    {profile.shopTheme === t.id && <CheckCircle className="w-6 h-6" />}
+                                                                </div>
+                                                                <div className="text-center">
+                                                                    <p className="text-sm font-black text-slate-900">{t.name}</p>
+                                                                    <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">{t.desc}</p>
+                                                                </div>
+                                                            </button>
+                                                        ))}
+                                                    </div>
+
+                                                    <div className="p-4 bg-blue-50 border border-blue-100 rounded-2xl flex gap-3">
+                                                        <Info className="w-5 h-5 text-blue-600 shrink-0" />
+                                                        <p className="text-xs text-blue-800 leading-relaxed">
+                                                            Le thème sélectionné sera appliqué instantanément à votre espace unique : <span className="font-bold">africamarket.app/boutique/{profile.shopSlug}</span>
+                                                        </p>
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                        </div>
+                                    </TabsContent>
+                                )}
+
                                 <TabsContent value="security">
-                                    <Card className="rounded-2xl shadow-sm">
-                                        <CardHeader>
-                                            <CardTitle>Sécurité du compte</CardTitle>
-                                        </CardHeader>
-                                        <CardContent className="space-y-4">
-                                            {[
-                                                { id: "current-password", label: "Mot de passe actuel" },
-                                                { id: "new-password", label: "Nouveau mot de passe" },
-                                                { id: "confirm-password", label: "Confirmer le mot de passe" },
-                                            ].map(({ id, label }) => (
-                                                <div key={id} className="space-y-2">
-                                                    <Label htmlFor={id}>{label}</Label>
-                                                    <Input id={id} type="password" />
+                                    <div className="space-y-6">
+                                        <Card className="rounded-2xl shadow-sm border-none bg-white">
+                                            <CardHeader>
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-2 bg-teal-100 rounded-xl text-teal-600">
+                                                        <ShieldCheck className="w-5 h-5" />
+                                                    </div>
+                                                    <div>
+                                                        <CardTitle>Double Authentification (2FA)</CardTitle>
+                                                        <CardDescription>Ajoutez une couche de sécurité supplémentaire à votre compte.</CardDescription>
+                                                    </div>
                                                 </div>
-                                            ))}
-                                            <Button className="bg-teal-600 hover:bg-teal-700">Changer le mot de passe</Button>
-                                        </CardContent>
-                                    </Card>
+                                            </CardHeader>
+                                            <CardContent className="space-y-4">
+                                                <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                                                    <div className="space-y-0.5">
+                                                        <p className="text-sm font-black text-slate-900">Authentification par Email</p>
+                                                        <p className="text-xs text-slate-500">Recevez un code de validation à chaque connexion.</p>
+                                                    </div>
+                                                    <Switch 
+                                                        checked={profile.twoFactorEnabled} 
+                                                        onCheckedChange={toggle2FA}
+                                                    />
+                                                </div>
+                                                
+                                                {profile.twoFactorEnabled && (
+                                                    <div className="p-4 bg-teal-50 border border-teal-100 rounded-2xl flex gap-3">
+                                                        <Lock className="w-5 h-5 text-teal-600 shrink-0" />
+                                                        <p className="text-xs text-teal-800 leading-relaxed">
+                                                            La protection 2FA est active. Un code unique vous sera demandé à chaque tentative de connexion pour garantir que vous seul pouvez accéder à votre boutique.
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </CardContent>
+                                        </Card>
+
+                                        <Card className="rounded-2xl shadow-sm border-none bg-white">
+                                            <CardHeader>
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-2 bg-blue-100 rounded-xl text-blue-600">
+                                                        <Lock className="w-5 h-5" />
+                                                    </div>
+                                                    <div>
+                                                        <CardTitle>Changer le mot de passe</CardTitle>
+                                                        <CardDescription>Modifiez votre mot de passe régulièrement.</CardDescription>
+                                                    </div>
+                                                </div>
+                                            </CardHeader>
+                                            <CardContent className="space-y-4">
+                                                {[
+                                                    { id: "current-password", label: "Mot de passe actuel" },
+                                                    { id: "new-password", label: "Nouveau mot de passe" },
+                                                    { id: "confirm-password", label: "Confirmer le mot de passe" },
+                                                ].map(({ id, label }) => (
+                                                    <div key={id} className="space-y-2">
+                                                        <Label htmlFor={id} className="text-xs font-black uppercase tracking-widest text-slate-500">{label}</Label>
+                                                        <Input id={id} type="password" placeholder="••••••••" className="h-12 rounded-xl bg-slate-50 border-none" />
+                                                    </div>
+                                                ))}
+                                                <Button className="w-full h-12 bg-teal-600 hover:bg-teal-700 rounded-xl font-bold shadow-lg shadow-teal-900/20">Mettre à jour le mot de passe</Button>
+                                            </CardContent>
+                                        </Card>
+                                    </div>
                                 </TabsContent>
                             </Tabs>
                         </div>

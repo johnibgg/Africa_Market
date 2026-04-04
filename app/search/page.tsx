@@ -20,22 +20,7 @@ import { useLanguage } from "@/lib/context/language-context"
 
 type ViewMode = "grid" | "list"
 
-const CATEGORIES = [
-  { id: "cat1", nameFr: "Mecanique", name: "Mechanics", slug: "mecanique" },
-  { id: "cat2", nameFr: "Menuiserie", name: "Carpentry", slug: "menuiserie" },
-  { id: "cat3", nameFr: "Restauration", name: "Restaurant", slug: "restauration" },
-  { id: "cat4", nameFr: "Electronique", name: "Electronics", slug: "electronique" },
-  { id: "cat5", nameFr: "Mode & Vetements", name: "Fashion", slug: "mode" },
-  { id: "cat6", nameFr: "Beaute & Bien-etre", name: "Beauty", slug: "beaute" },
-  { id: "cat7", nameFr: "Maison & Deco", name: "Home", slug: "maison" },
-  { id: "cat8", nameFr: "Agriculture", name: "Agriculture", slug: "agriculture" },
-  { id: "cat9", nameFr: "Education", name: "Education", slug: "education" },
-  { id: "cat10", nameFr: "Transport", name: "Transport", slug: "transport" },
-  { id: "cat11", nameFr: "Sante", name: "Health", slug: "sante" },
-  { id: "cat12", nameFr: "Construction", name: "Construction", slug: "construction" },
-]
-
-function FilterSidebar({ selectedCategories, toggleCategory, priceRange, setPriceRange, listingType, setListingType, minRating, setMinRating, resetFilters, t, locale }: any) {
+function FilterSidebar({ categories, selectedCategories, toggleCategory, priceRange, setPriceRange, listingType, setListingType, minRating, setMinRating, resetFilters, t, locale }: any) {
   return (
     <div className="space-y-6">
       <div>
@@ -56,13 +41,14 @@ function FilterSidebar({ selectedCategories, toggleCategory, priceRange, setPric
       <Separator />
       <div>
         <h4 className="mb-3 text-sm font-semibold text-foreground">{t("search.category")}</h4>
-        <div className="flex flex-col gap-2">
-          {CATEGORIES.map((cat) => (
+        <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto pr-2">
+          {categories.map((cat: any) => (
             <label key={cat.id} className="flex items-center gap-2 text-sm">
-              <Checkbox checked={selectedCategories.includes(cat.slug)} onCheckedChange={() => toggleCategory(cat.slug)} />
+              <Checkbox checked={selectedCategories.includes(cat.id)} onCheckedChange={() => toggleCategory(cat.id)} />
               <span className="flex-1">{locale === "fr" ? cat.nameFr : cat.name}</span>
             </label>
           ))}
+          {categories.length === 0 && <p className="text-xs text-muted-foreground italic">Aucune catégorie disponible</p>}
         </div>
       </div>
       <Separator />
@@ -102,6 +88,7 @@ function SearchContent() {
   const [query, setQuery] = useState(initialQuery)
   const [viewMode, setViewMode] = useState<ViewMode>("grid")
   const [sortBy, setSortBy] = useState("relevance")
+  const [categories, setCategories] = useState<any[]>([])
   const [selectedCategories, setSelectedCategories] = useState<string[]>(initialCategory ? [initialCategory] : [])
   const [priceRange, setPriceRange] = useState([0, 500000])
   const [listingType, setListingType] = useState("all")
@@ -109,7 +96,23 @@ function SearchContent() {
   const [listings, setListings] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Fetch from real API
+  // Fetch categories
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await fetch("/api/categories")
+        if (res.ok) {
+          const data = await res.json()
+          setCategories(Array.isArray(data) ? data : [])
+        }
+      } catch (err) {
+        console.error("Failed to fetch categories", err)
+      }
+    }
+    fetchCategories()
+  }, [])
+
+  // Fetch listings
   useEffect(() => {
     const fetchListings = async () => {
       setLoading(true)
@@ -117,6 +120,11 @@ function SearchContent() {
         const params = new URLSearchParams()
         if (query) params.set("q", query)
         if (listingType !== "all") params.set("type", listingType)
+        if (selectedCategories.length > 0) params.set("categories", selectedCategories.join(","))
+        if (priceRange[0] > 0) params.set("minPrice", priceRange[0].toString())
+        if (priceRange[1] < 500000) params.set("maxPrice", priceRange[1].toString())
+        if (minRating > 0) params.set("minRating", minRating.toString())
+
         const res = await fetch(`/api/listings?${params.toString()}`)
         const data = await res.json()
         setListings(Array.isArray(data) ? data : [])
@@ -127,12 +135,12 @@ function SearchContent() {
       }
     }
 
-    const debounce = setTimeout(fetchListings, 300)
+    const debounce = setTimeout(fetchListings, 400) // Slightly longer debounce for more complex query
     return () => clearTimeout(debounce)
-  }, [query, listingType])
+  }, [query, listingType, selectedCategories, priceRange, minRating])
 
-  const toggleCategory = (slug: string) => {
-    setSelectedCategories((prev) => prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug])
+  const toggleCategory = (id: string) => {
+    setSelectedCategories((prev) => prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id])
   }
 
   const resetFilters = () => {
@@ -143,17 +151,9 @@ function SearchContent() {
     setQuery("")
   }
 
-  // Client-side filtering on the API results (for price, rating, categories)
+  // Only client-side sorting remains (on the filtered results from API)
   const filtered = useMemo(() => {
     let result = [...listings]
-    if (selectedCategories.length > 0) {
-      result = result.filter((l) => {
-        const cat = CATEGORIES.find((c) => c.id === l.categoryId)
-        return cat && selectedCategories.includes(cat.slug)
-      })
-    }
-    result = result.filter((l) => l.price >= priceRange[0] && l.price <= priceRange[1])
-    if (minRating > 0) result = result.filter((l) => l.rating >= minRating)
     switch (sortBy) {
       case "price_asc": result.sort((a, b) => a.price - b.price); break
       case "price_desc": result.sort((a, b) => b.price - a.price); break
@@ -161,7 +161,7 @@ function SearchContent() {
       case "recent": result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()); break
     }
     return result
-  }, [listings, selectedCategories, priceRange, minRating, sortBy])
+  }, [listings, sortBy])
 
   const activeFilterCount = selectedCategories.length + (listingType !== "all" ? 1 : 0) + (minRating > 0 ? 1 : 0) + (priceRange[0] > 0 || priceRange[1] < 500000 ? 1 : 0)
 
@@ -225,7 +225,7 @@ function SearchContent() {
                 <SheetContent side="left" className="w-80 overflow-y-auto">
                   <SheetHeader><SheetTitle>{t("search.filters")}</SheetTitle></SheetHeader>
                   <div className="mt-4">
-                    <FilterSidebar selectedCategories={selectedCategories} toggleCategory={toggleCategory} priceRange={priceRange} setPriceRange={setPriceRange} listingType={listingType} setListingType={setListingType} minRating={minRating} setMinRating={setMinRating} resetFilters={resetFilters} t={t as (key: string) => string} locale={locale} />
+                    <FilterSidebar categories={categories} selectedCategories={selectedCategories} toggleCategory={toggleCategory} priceRange={priceRange} setPriceRange={setPriceRange} listingType={listingType} setListingType={setListingType} minRating={minRating} setMinRating={setMinRating} resetFilters={resetFilters} t={t as (key: string) => string} locale={locale} />
                   </div>
                 </SheetContent>
               </Sheet>
@@ -234,12 +234,12 @@ function SearchContent() {
 
           {activeFilterCount > 0 && (
             <div className="mx-auto mt-3 flex max-w-7xl flex-wrap items-center gap-2">
-              {selectedCategories.map((slug) => {
-                const cat = CATEGORIES.find((c) => c.slug === slug)
+              {selectedCategories.map((id) => {
+                const cat = categories.find((c) => c.id === id)
                 return (
-                  <Badge key={slug} variant="secondary" className="gap-1">
+                  <Badge key={id} variant="secondary" className="gap-1">
                     {locale === "fr" ? cat?.nameFr : cat?.name}
-                    <button onClick={() => toggleCategory(slug)}><X className="h-3 w-3" /></button>
+                    <button onClick={() => toggleCategory(id)}><X className="h-3 w-3" /></button>
                   </Badge>
                 )
               })}
@@ -260,7 +260,7 @@ function SearchContent() {
           <aside className="hidden w-64 flex-shrink-0 lg:block">
             <div className="sticky top-20 rounded-lg border bg-card p-4">
               <h3 className="mb-4 text-sm font-semibold text-foreground">{t("search.filters")}</h3>
-              <FilterSidebar selectedCategories={selectedCategories} toggleCategory={toggleCategory} priceRange={priceRange} setPriceRange={setPriceRange} listingType={listingType} setListingType={setListingType} minRating={minRating} setMinRating={setMinRating} resetFilters={resetFilters} t={t as (key: string) => string} locale={locale} />
+              <FilterSidebar categories={categories} selectedCategories={selectedCategories} toggleCategory={toggleCategory} priceRange={priceRange} setPriceRange={setPriceRange} listingType={listingType} setListingType={setListingType} minRating={minRating} setMinRating={setMinRating} resetFilters={resetFilters} t={t as (key: string) => string} locale={locale} />
             </div>
           </aside>
 

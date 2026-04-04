@@ -16,7 +16,8 @@ import {
     Search,
     ArrowUpRight,
     ArrowDownRight,
-    Filter
+    Filter,
+    ArrowDownToLine
 } from "lucide-react"
 import {
     LineChart,
@@ -32,6 +33,8 @@ import {
 import { Input } from "@/components/ui/input"
 import Image from "next/image"
 import { ClientOnly } from "@/components/client-only"
+import { toast } from "sonner"
+import { cn } from "@/lib/utils"
 
 import { useState, useEffect } from "react"
 import { useAuth } from "@/lib/context/auth-context"
@@ -74,7 +77,26 @@ export default function AdminDashboard() {
 
     const stats = data.stats
     const usersList = data.users
+    const withdrawals = data.withdrawals || []
     const monthlyData = data.monthlyData
+
+    const handleUpdateWithdrawal = async (id: string, status: string) => {
+        try {
+            const res = await fetch(`/api/withdrawals/${id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ status })
+            })
+            if (res.ok) {
+                toast.success(`Retrait ${status === 'COMPLETED' ? 'validé' : 'rejeté'}`)
+                // Refresh
+                const refreshRes = await fetch("/api/dashboard/admin")
+                if (refreshRes.ok) setData(await refreshRes.json())
+            }
+        } catch {
+            toast.error("Erreur réseau")
+        }
+    }
 
     return (
         <div className="container mx-auto px-4 py-8">
@@ -142,19 +164,19 @@ export default function AdminDashboard() {
                         </div>
                     </CardContent>
                 </Card>
-                <Card className="border-l-4 border-l-purple-500">
+                <Card className="border-l-4 border-l-emerald-500">
                     <CardContent className="pt-6">
                         <div className="flex justify-between">
                             <div>
-                                <p className="text-sm text-muted-foreground font-medium">Volume d'affaires</p>
-                                <h3 className="text-2xl font-bold">{(stats.totalRevenue / 1000000).toFixed(1)}M FCFA</h3>
+                                <p className="text-sm text-muted-foreground font-medium">Revenus (Commissions)</p>
+                                <h3 className="text-2xl font-bold">{(stats.totalCommission || 0).toLocaleString()} FCFA</h3>
                                 <div className="flex items-center text-xs text-green-600 mt-1">
-                                    <ArrowUpRight className="w-3 h-3 mr-1" />
-                                    <span>+8.4% ce mois</span>
+                                    <ArrowUpRight className="h-3 w-3 mr-1" />
+                                    <span>+18.2%</span>
                                 </div>
                             </div>
-                            <div className="p-2 bg-purple-50 rounded-lg">
-                                <DollarSign className="w-6 h-6 text-purple-500" />
+                            <div className="p-3 bg-emerald-100 rounded-2xl">
+                                <DollarSign className="h-6 w-6 text-emerald-600" />
                             </div>
                         </div>
                     </CardContent>
@@ -237,76 +259,168 @@ export default function AdminDashboard() {
                 </Card>
             </div>
 
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0">
-                    <div>
-                        <CardTitle>Gestion des utilisateurs</CardTitle>
-                        <CardDescription>Liste complète des utilisateurs enregistrés sur la plateforme.</CardDescription>
-                    </div>
-                    <div className="relative w-64">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input placeholder="Rechercher un utilisateur..." className="pl-8" />
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm">
-                            <thead className="bg-muted/50 border-b">
-                                <tr>
-                                    <th className="p-4 font-semibold">Utilisateur</th>
-                                    <th className="p-4 font-semibold">Rôle</th>
-                                    <th className="p-4 font-semibold">Localisation</th>
-                                    <th className="p-4 font-semibold">Date d'inscription</th>
-                                    <th className="p-4 font-semibold">Statut</th>
-                                    <th className="p-4 font-semibold text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {usersList.map((user: any) => (
-                                    <tr key={user.id} className="border-b transition-colors hover:bg-muted/20">
-                                        <td className="p-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full bg-muted overflow-hidden relative">
-                                                    <Image src={user.image || "/placeholder.svg"} alt={user.name} fill />
-                                                </div>
-                                                <div>
-                                                    <p className="font-semibold">{user.name}</p>
-                                                    <p className="text-xs text-muted-foreground">{user.email}</p>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="p-4">
-                                            <Badge variant="secondary" className="capitalize">
-                                                {user.role}
-                                            </Badge>
-                                        </td>
-                                        <td className="p-4 text-muted-foreground">{user.location || "N/A"}</td>
-                                        <td className="p-4 text-muted-foreground">
-                                            {new Date(user.createdAt).toLocaleDateString()}
-                                        </td>
-                                        <td className="p-4">
-                                            <div className="flex items-center gap-1.5">
-                                                <div className={`w-2 h-2 rounded-full ${user.emailVerified ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-                                                <span>{user.emailVerified ? 'Vérifié' : 'Non vérifié'}</span>
-                                            </div>
-                                        </td>
-                                        <td className="p-4 text-right">
-                                            <Button variant="ghost" size="icon"><MoreVertical className="w-4 h-4" /></Button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                    <div className="mt-4 flex justify-between items-center text-xs text-muted-foreground">
-                        <p>Affichage de {usersList.length} sur {stats.totalUsers} utilisateurs</p>
-                        <div className="flex gap-2">
-                            <Button variant="outline" size="sm" disabled>Précédent</Button>
-                            <Button variant="outline" size="sm">Suivant</Button>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
+            <Tabs defaultValue="users" className="w-full">
+                <TabsList className="bg-slate-100 p-1 rounded-xl mb-6">
+                    <TabsTrigger value="users" className="rounded-lg px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm">Utilisateurs</TabsTrigger>
+                    <TabsTrigger value="withdrawals" className="rounded-lg px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm">Retraits (Vendeurs)</TabsTrigger>
+                    <TabsTrigger value="moderation" className="rounded-lg px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm">Modération</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="users">
+                    <Card className="border-none shadow-sm rounded-2xl overflow-hidden bg-white">
+                        <CardHeader className="flex flex-row items-center justify-between border-b bg-slate-50/50 px-6 py-4">
+                            <div>
+                                <CardTitle className="text-lg font-black text-slate-900">Gestion des Utilisateurs</CardTitle>
+                                <CardDescription>Consultez et gérez tous les comptes de la plateforme</CardDescription>
+                            </div>
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                <Input placeholder="Rechercher..." className="pl-9 w-64 rounded-xl border-slate-200" />
+                            </div>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left text-sm">
+                                    <thead className="bg-slate-50/30 text-slate-500 text-xs font-black uppercase tracking-wider">
+                                        <tr>
+                                            <th className="px-6 py-4">Utilisateur</th>
+                                            <th className="px-6 py-4">Rôle</th>
+                                            <th className="px-6 py-4">Localisation</th>
+                                            <th className="px-6 py-4">Inscription</th>
+                                            <th className="px-6 py-4">Statut</th>
+                                            <th className="px-6 py-4 text-right">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {usersList.map((user: any) => (
+                                            <tr key={user.id} className="hover:bg-slate-50/50 transition-colors">
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 rounded-xl bg-slate-100 overflow-hidden relative shadow-sm">
+                                                            <Image src={user.image || "/logo.png"} alt={user.name} fill className="object-cover" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-bold text-slate-900">{user.name}</p>
+                                                            <p className="text-xs text-slate-400">{user.email}</p>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <Badge variant="secondary" className="rounded-full px-3 py-0.5 text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-600 border-none">
+                                                        {user.role}
+                                                    </Badge>
+                                                </td>
+                                                <td className="px-6 py-4 text-slate-500 font-medium">{user.location || "N/A"}</td>
+                                                <td className="px-6 py-4 text-slate-500 font-medium">
+                                                    {new Date(user.createdAt).toLocaleDateString()}
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className={`w-2 h-2 rounded-full ${user.emailVerified ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-300'}`}></div>
+                                                        <span className="font-bold text-xs text-slate-600">{user.emailVerified ? 'Vérifié' : 'Non vérifié'}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 text-right">
+                                                    <Button variant="ghost" size="icon" className="rounded-lg hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-200"><MoreVertical className="w-4 h-4 text-slate-400" /></Button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div className="mt-4 p-4 flex justify-between items-center text-xs text-muted-foreground">
+                                <p>Affichage de {usersList.length} sur {stats.totalUsers} utilisateurs</p>
+                                <div className="flex gap-2">
+                                    <Button variant="outline" size="sm" disabled>Précédent</Button>
+                                    <Button variant="outline" size="sm">Suivant</Button>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="withdrawals">
+                     <Card className="border-none shadow-sm rounded-2xl overflow-hidden bg-white">
+                         <CardHeader className="flex flex-row items-center justify-between border-b bg-slate-50/50 px-6 py-4">
+                             <div>
+                                 <CardTitle className="text-lg font-black text-slate-900">Demandes de Retraits</CardTitle>
+                                 <CardDescription>Gérez les demandes de paiement des vendeurs</CardDescription>
+                             </div>
+                         </CardHeader>
+                         <CardContent className="p-0">
+                            {withdrawals.length === 0 ? (
+                                <div className="p-12 text-center">
+                                    <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                                        <ArrowDownToLine className="w-10 h-10 text-slate-200" />
+                                    </div>
+                                    <h3 className="text-lg font-bold text-slate-900 mb-2">Aucune demande en attente</h3>
+                                    <p className="text-slate-500">Les demandes de retrait des vendeurs apparaîtront ici.</p>
+                                </div>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left text-sm">
+                                        <thead className="bg-slate-50/30 text-slate-500 text-xs font-black uppercase tracking-wider">
+                                            <tr>
+                                                <th className="px-6 py-4">Vendeur</th>
+                                                <th className="px-6 py-4">Montant</th>
+                                                <th className="px-6 py-4">Méthode</th>
+                                                <th className="px-6 py-4">Coordonnées</th>
+                                                <th className="px-6 py-4">Statut</th>
+                                                <th className="px-6 py-4 text-right">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {withdrawals.map((w: any) => (
+                                                <tr key={w.id} className="hover:bg-slate-50/50 transition-colors">
+                                                    <td className="px-6 py-4">
+                                                        <p className="font-bold text-slate-900">{w.user.name}</p>
+                                                        <p className="text-xs text-slate-400">{w.user.email}</p>
+                                                    </td>
+                                                    <td className="px-6 py-4 font-black text-teal-600">{w.amount.toLocaleString()} FCFA</td>
+                                                    <td className="px-6 py-4 uppercase text-xs font-bold text-slate-500">{w.method}</td>
+                                                    <td className="px-6 py-4 text-slate-500 font-medium">{w.phone || w.bankInfo}</td>
+                                                    <td className="px-6 py-4">
+                                                        <Badge className={cn(
+                                                            "rounded-full px-3 py-0.5 text-[10px] font-black uppercase tracking-wider border-none",
+                                                            w.status === "PENDING" ? "bg-orange-50 text-orange-600" :
+                                                            w.status === "COMPLETED" ? "bg-emerald-50 text-emerald-600" :
+                                                            "bg-red-50 text-red-600"
+                                                        )}>
+                                                            {w.status}
+                                                        </Badge>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-right">
+                                                        {w.status === "PENDING" && (
+                                                            <div className="flex justify-end gap-2">
+                                                                <Button 
+                                                                    size="sm" 
+                                                                    variant="outline" 
+                                                                    className="h-8 rounded-lg border-emerald-200 text-emerald-600 hover:bg-emerald-50"
+                                                                    onClick={() => handleUpdateWithdrawal(w.id, "COMPLETED")}
+                                                                >
+                                                                    Valider
+                                                                </Button>
+                                                                <Button 
+                                                                    size="sm" 
+                                                                    variant="outline" 
+                                                                    className="h-8 rounded-lg border-red-200 text-red-600 hover:bg-red-50"
+                                                                    onClick={() => handleUpdateWithdrawal(w.id, "REJECTED")}
+                                                                >
+                                                                    Rejeter
+                                                                </Button>
+                                                            </div>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                         </CardContent>
+                     </Card>
+                 </TabsContent>
+            </Tabs>
         </div>
     )
 }

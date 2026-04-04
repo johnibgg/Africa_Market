@@ -21,6 +21,8 @@ function LoginContent() {
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [code, setCode] = useState("")
+  const [showTwoFactor, setShowTwoFactor] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
   // Success and Error messages from verification
@@ -48,12 +50,17 @@ function LoginContent() {
     setIsLoading(true)
 
     try {
-      await login({ email, password })
+      await login({ email, password, code })
       toast.success("Connexion réussie !")
       router.push("/")
       router.refresh()
     } catch (error: any) {
-      toast.error(error.message || "Email ou mot de passe incorrect")
+      if (error.message === "2FA_REQUIRED") {
+        setShowTwoFactor(true)
+        toast.info("Un code de vérification a été envoyé à votre email.")
+      } else {
+        toast.error(error.message || "Email ou mot de passe incorrect")
+      }
     } finally {
       setIsLoading(false)
     }
@@ -71,51 +78,82 @@ function LoginContent() {
 
         <Card>
           <CardHeader>
-            <CardTitle>{t("auth.login")}</CardTitle>
-            <CardDescription>{t("auth.login_desc")}</CardDescription>
+            <CardTitle>{showTwoFactor ? "Vérification 2FA" : t("auth.login")}</CardTitle>
+            <CardDescription>
+              {showTwoFactor 
+                ? "Entrez le code à 6 chiffres envoyé sur votre boîte mail pour continuer." 
+                : t("auth.login_desc")}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">{t("auth.email")}</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="votre@email.com"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">{t("auth.password")}</Label>
-                  <Link href="/auth/forgot-password" className="text-xs text-primary hover:underline">
-                    {t("auth.forgot_password")}
-                  </Link>
-                </div>
-                <div className="relative">
+              {!showTwoFactor && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">{t("auth.email")}</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="votre@email.com"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="password">{t("auth.password")}</Label>
+                      <Link href="/auth/forgot-password" className="text-xs text-primary hover:underline">
+                        {t("auth.forgot_password")}
+                      </Link>
+                    </div>
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="********"
+                        required
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        onClick={() => setShowPassword(!showPassword)}
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {showTwoFactor && (
+                <div className="space-y-2">
+                  <Label htmlFor="code">Code de vérification</Label>
                   <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="********"
+                    id="code"
+                    type="text"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    placeholder="123456"
+                    maxLength={6}
                     required
+                    className="text-center text-2xl tracking-[0.5em] font-bold h-16"
                   />
-                  <button
-                    type="button"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    onClick={() => setShowPassword(!showPassword)}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  <button 
+                    type="button" 
+                    onClick={() => setShowTwoFactor(false)}
+                    className="text-xs text-primary hover:underline mt-2"
                   >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    Retour à la connexion
                   </button>
                 </div>
-              </div>
+              )}
 
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Connexion..." : t("auth.login")}
+                {isLoading ? "Chargement..." : (showTwoFactor ? "Confirmer le code" : t("auth.login"))}
                 {!isLoading && <ArrowRight className="ml-2 h-4 w-4" />}
               </Button>
             </form>

@@ -20,7 +20,16 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog"
 import TrackingMap from "@/components/delivery/tracking-map"
+import { cn } from "@/lib/utils"
 
+const mockTrajectory = [
+    { lat: 6.366, lng: 2.450 },
+    { lat: 6.367, lng: 2.448 },
+    { lat: 6.368, lng: 2.446 },
+    { lat: 6.369, lng: 2.444 },
+    { lat: 6.370, lng: 2.442 },
+    { lat: 6.371, lng: 2.440 },
+]
 
 export default function BuyerDashboard() {
     const { user, isAuthenticated } = useAuth()
@@ -61,17 +70,11 @@ export default function BuyerDashboard() {
     const buyer = user
     const buyerOrders = data.orders || []
     const wishlist: any[] = [] // Wishlist needs a dedicated table in DB to be real
-    const followedSellers = data.followedSellers || []
-    const stats = data.stats || {}
-
-    // Mock trajectory data
-    const mockTrajectory = [
-        { lat: 6.366, lng: 2.450 },
-        { lat: 6.367, lng: 2.448 },
-        { lat: 6.368, lng: 2.446 },
-        { lat: 6.369, lng: 2.444 },
-        { lat: 6.370, lng: 2.442 },
-        { lat: 6.371, lng: 2.440 },
+    const stats = [
+        { label: "Commandes", value: buyerOrders.length.toString(), icon: Package, color: "text-blue-600", bg: "bg-blue-100" },
+        { label: "Favoris", value: wishlist.length.toString(), icon: Heart, color: "text-red-600", bg: "bg-red-100" },
+        { label: "Dépenses", value: `${(data.stats?.totalSpent || 0).toLocaleString()} FCFA`, icon: Star, color: "text-yellow-600", bg: "bg-yellow-100" },
+        { label: "Suivis", value: (data.stats?.followingCount || 0).toString(), icon: ShieldCheck, color: "text-teal-600", bg: "bg-teal-100" },
     ]
 
     const getStatusColor = (status: string) => {
@@ -85,163 +88,150 @@ export default function BuyerDashboard() {
     }
 
     return (
-        <div className="container mx-auto px-4 py-8">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-                <div>
-                    <h1 className="text-3xl font-bold">Mon Tableau de Bord</h1>
-                    <p className="text-muted-foreground">Bienvenue, {buyer?.name || "Utilisateur"}</p>
+        <div className="container mx-auto px-4 py-8 space-y-8">
+            {/* Header with User Info */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-8 rounded-[2rem] border shadow-sm">
+                <div className="flex items-center gap-6">
+                    <div className="relative">
+                        <div className="w-20 h-20 rounded-3xl bg-teal-100 flex items-center justify-center text-teal-700 font-black text-3xl shadow-inner overflow-hidden border-4 border-white">
+                            {user?.image ? <Image src={user.image} alt={user.name || ""} fill className="object-cover" /> : user?.name?.charAt(0)}
+                        </div>
+                        <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-emerald-500 rounded-full border-2 border-white" />
+                    </div>
+                    <div>
+                        <h1 className="text-3xl font-black text-slate-900 tracking-tight">Bonjour, {user?.name?.split(' ')[0]} 👋</h1>
+                        <p className="text-slate-500 font-medium mt-1 flex items-center gap-2">
+                            <ShieldCheck className="w-4 h-4 text-teal-500" /> Compte Acheteur Particulier
+                        </p>
+                    </div>
                 </div>
-                <div className="flex gap-2">
-                    <Button variant="outline" asChild>
-                        <Link href="/profile">Mon Profil</Link>
+                <div className="flex gap-3">
+                    <Button variant="outline" className="rounded-2xl border-slate-200 h-12 px-6 font-bold" asChild>
+                        <Link href="/profile">Mon profil</Link>
                     </Button>
-                    <Button className="bg-teal-600 hover:bg-teal-700">Acheter à nouveau</Button>
+                    <Button className="rounded-2xl bg-teal-600 hover:bg-teal-700 shadow-lg shadow-teal-900/20 h-12 px-8 font-bold text-white" asChild>
+                        <Link href="/search">
+                            <Package className="w-5 h-5 mr-2" /> Shopping
+                        </Link>
+                    </Button>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <Card>
-                    <CardContent className="pt-6">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 bg-teal-100 rounded-full">
-                                <Package className="w-6 h-6 text-teal-600" />
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                {stats.map((stat, i) => (
+                    <Card key={i} className="border-none shadow-sm rounded-3xl overflow-hidden group hover:shadow-md transition-all bg-white">
+                        <CardContent className="p-6">
+                            <div className={cn("p-3 w-12 h-12 rounded-2xl mb-4 flex items-center justify-center", stat.bg, stat.color)}>
+                                <stat.icon className="w-6 h-6" />
                             </div>
-                            <div>
-                                <p className="text-sm text-muted-foreground">Commandes totales</p>
-                                <h3 className="text-2xl font-bold">{stats.orderCount}</h3>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardContent className="pt-6">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 bg-pink-100 rounded-full">
-                                <Heart className="w-6 h-6 text-pink-600" />
-                            </div>
-                            <div>
-                                <p className="text-sm text-muted-foreground">Vendeurs suivis</p>
-                                <h3 className="text-2xl font-bold">{stats.followingCount}</h3>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardContent className="pt-6">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 bg-yellow-100 rounded-full">
-                                <Star className="w-6 h-6 text-yellow-600" />
-                            </div>
-                            <div>
-                                <p className="text-sm text-muted-foreground">Total dépensé</p>
-                                <h3 className="text-2xl font-bold">{stats.totalSpent?.toLocaleString()} FCFA</h3>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                            <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">{stat.label}</p>
+                            <p className="text-2xl font-black text-slate-900">{stat.value}</p>
+                        </CardContent>
+                    </Card>
+                ))}
             </div>
 
             <Tabs defaultValue="orders" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 max-w-[400px] mb-8">
-                    <TabsTrigger value="orders">Mes Commandes</TabsTrigger>
-                    <TabsTrigger value="wishlist">Ma Wishlist</TabsTrigger>
+                <TabsList className="bg-slate-200/50 p-1 rounded-2xl h-14 backdrop-blur-md mb-8">
+                    <TabsTrigger value="orders" className="rounded-xl px-8 h-12 data-[state=active]:bg-white data-[state=active]:shadow-lg font-bold transition-all">Mes Commandes</TabsTrigger>
+                    <TabsTrigger value="wishlist" className="rounded-xl px-8 h-12 data-[state=active]:bg-white data-[state=active]:shadow-lg font-bold transition-all">Ma Wishlist</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="orders">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Historique des commandes</CardTitle>
-                            <CardDescription>Suivez vos achats récents et passés.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-6">
-                                {buyerOrders.map((order: any) => (
-                                    <div key={order.id} className="border rounded-lg overflow-hidden">
-                                        <div className="bg-muted/50 p-4 flex flex-wrap justify-between items-center gap-4 border-b">
-                                            <div className="flex gap-6 text-sm">
-                                                <div>
-                                                    <p className="text-muted-foreground">COMMANDE PASSÉE</p>
-                                                    <p className="font-medium">{new Date(order.createdAt).toLocaleDateString("fr-FR")}</p>
-                                                </div>
-                                                <div>
-                                                    <p className="text-muted-foreground">TOTAL</p>
-                                                    <p className="font-medium">{order.total.toLocaleString()} FCFA</p>
-                                                </div>
-                                                <div>
-                                                    <p className="text-muted-foreground">EXPÉDIÉ À</p>
-                                                    <p className="font-medium truncate max-w-[150px]">{order.deliveryAddress}</p>
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="text-xs text-muted-foreground mb-1">N° DE COMMANDE {order.id}</p>
-                                                <Badge className={getStatusColor(order.status)}>
-                                                    {order.status === "DELIVERED" ? "Livré" :
-                                                        order.status === "SHIPPED" ? "En cours d'expédition" :
-                                                            order.status === "PROCESSING" ? "En traitement" : order.status}
-                                                </Badge>
-                                            </div>
-                                        </div>
-                                        <div className="p-4">
-                                            {order.items.map((item: any, idx: number) => (
-                                                <div key={idx} className="flex gap-4 items-center">
-                                                    <div className="relative w-16 h-16 rounded-md overflow-hidden bg-muted shrink-0">
-                                                        <Image
-                                                            src={item.listing.images[0]}
-                                                            alt={item.listing.title}
-                                                            fill
-                                                            className="object-cover"
-                                                        />
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <h4 className="font-semibold truncate">{item.listing.title}</h4>
-                                                        <p className="text-sm text-muted-foreground">Vendu par {order.sellerName}</p>
-                                                        <p className="text-sm font-medium mt-1">{item.price.toLocaleString()} FCFA x {item.quantity}</p>
-                                                    </div>
-                                                    <div className="flex flex-col gap-2">
-                                                        {order.status === "SHIPPED" && (
-                                                            <Dialog open={isTrackingOpen} onOpenChange={setIsTrackingOpen}>
-                                                                <DialogTrigger asChild>
-                                                                    <Button size="sm" className="bg-teal-600 hover:bg-teal-700">
-                                                                        <Truck className="mr-2 h-4 w-4" /> Suivre
-                                                                    </Button>
-                                                                </DialogTrigger>
-                                                                <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden border-none shadow-2xl">
-                                                                    <div className="bg-teal-700 p-6 text-white">
-                                                                        <DialogHeader>
-                                                                            <DialogTitle className="text-2xl font-heading flex items-center gap-2">
-                                                                                <Navigation className="w-6 h-6 animate-pulse" />
-                                                                                Suivi en Direct
-                                                                            </DialogTitle>
-                                                                            <DialogDescription className="text-teal-100">
-                                                                                Course #{order.id} • Livreur : Serge Adandedjan
-                                                                            </DialogDescription>
-                                                                        </DialogHeader>
-                                                                    </div>
-                                                                    <div className="p-1">
-                                                                        <TrackingMap
-                                                                            delivererPosition={mockTrajectory[0]}
-                                                                            trajectory={mockTrajectory}
-                                                                            pickupPoint={{ lat: 6.365, lng: 2.455 }}
-                                                                            deliveryPoint={{ lat: 6.375, lng: 2.435 }}
-                                                                        />
-                                                                    </div>
-                                                                </DialogContent>
-                                                            </Dialog>
-                                                        )}
-                                                        {order.status === "CONFIRMED" && (
-                                                            <Button size="sm" className="bg-orange-500 hover:bg-orange-600">
-                                                                <Gavel className="mr-2 h-4 w-4" /> Voir les offres (3)
-                                                            </Button>
-                                                        )}
-                                                        <Button size="sm" className="bg-teal-600 hover:bg-teal-700">Acheter à nouveau</Button>
-                                                        <Button size="sm" variant="outline">Laisser un avis</Button>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ))}
+                    <Card className="border-none shadow-sm rounded-[2rem] overflow-hidden bg-white">
+                        <CardHeader className="flex flex-row items-center justify-between border-b bg-slate-50/50 px-8 py-6">
+                            <div>
+                                <CardTitle className="text-xl font-black text-slate-900">Historique des commandes</CardTitle>
+                                <CardDescription className="font-medium">Suivez vos achats en temps réel</CardDescription>
                             </div>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                            {buyerOrders.length === 0 ? (
+                                <div className="p-12 text-center">
+                                    <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                                        <Package className="w-10 h-10 text-slate-200" />
+                                    </div>
+                                    <h3 className="text-lg font-bold text-slate-900 mb-2">Aucune commande pour le moment</h3>
+                                    <p className="text-slate-500 mb-6 max-w-xs mx-auto">Explorez notre catalogue et trouvez des pépites !</p>
+                                    <Button className="rounded-xl bg-teal-600 hover:bg-teal-700 px-8" asChild>
+                                        <Link href="/search">Découvrir les produits</Link>
+                                    </Button>
+                                </div>
+                            ) : (
+                                <div className="divide-y divide-slate-100">
+                                    {buyerOrders.map((order: any) => (
+                                        <div key={order.id} className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:bg-slate-50/50 transition-colors">
+                                            <div className="flex items-center gap-5">
+                                                <div className="relative w-20 h-20 rounded-2xl overflow-hidden shadow-sm border bg-slate-50">
+                                                    {order.items[0]?.listing.images[0] && (
+                                                        <Image src={order.items[0].listing.images[0]} alt="Produit" fill className="object-cover" />
+                                                    )}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-black text-slate-900 line-clamp-1">{order.items[0]?.listing.title}</p>
+                                                    <p className="text-sm text-slate-400 font-medium">Commande #{order.id.slice(-6).toUpperCase()}</p>
+                                                    <p className="text-sm font-black text-teal-600 mt-1">{order.total.toLocaleString()} FCFA</p>
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="flex flex-col md:flex-row items-end md:items-center gap-4">
+                                                <Badge className={cn(
+                                                    "rounded-full px-4 py-1 text-[10px] font-black uppercase tracking-widest border-none",
+                                                    getStatusColor(order.status)
+                                                )}>
+                                                    {order.status === "DELIVERED" ? "Livré" : 
+                                                     order.status === "SHIPPED" ? "En route" : 
+                                                     order.status === "PROCESSING" ? "En traitement" : "Confirmé"}
+                                                </Badge>
+                                                
+                                                <div className="flex gap-2">
+                                                    {order.seller?.phone && (
+                                                        <Button size="sm" variant="outline" className="rounded-xl font-bold bg-emerald-50 text-emerald-600 border-emerald-100" asChild>
+                                                            <Link href={`https://wa.me/${order.seller.phone.replace(/\D/g, '')}`} target="_blank">
+                                                                WhatsApp
+                                                            </Link>
+                                                        </Button>
+                                                    )}
+                                                    {order.status === "SHIPPED" && (
+                                                        <Dialog open={isTrackingOpen} onOpenChange={setIsTrackingOpen}>
+                                                            <DialogTrigger asChild>
+                                                                <Button size="sm" className="rounded-xl font-bold bg-teal-600 hover:bg-teal-700">
+                                                                    <Truck className="mr-2 h-4 w-4" /> Suivre
+                                                                </Button>
+                                                            </DialogTrigger>
+                                                            <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden border-none shadow-2xl rounded-[2rem]">
+                                                                <div className="bg-teal-700 p-6 text-white">
+                                                                    <DialogHeader>
+                                                                        <DialogTitle className="text-2xl font-black flex items-center gap-2">
+                                                                            <Navigation className="w-6 h-6 animate-pulse" />
+                                                                            Suivi en Direct
+                                                                        </DialogTitle>
+                                                                        <DialogDescription className="text-teal-100">
+                                                                            Course #{order.id.slice(-6)} • Livreur en route
+                                                                        </DialogDescription>
+                                                                    </DialogHeader>
+                                                                </div>
+                                                                <div className="p-1">
+                                                                    <TrackingMap
+                                                                        delivererPosition={mockTrajectory[0]}
+                                                                        trajectory={mockTrajectory}
+                                                                        pickupPoint={{ lat: 6.365, lng: 2.455 }}
+                                                                        deliveryPoint={{ lat: 6.375, lng: 2.435 }}
+                                                                    />
+                                                                </div>
+                                                            </DialogContent>
+                                                        </Dialog>
+                                                    )}
+                                                    <Button variant="outline" size="sm" className="rounded-xl font-bold h-9 border-slate-200 shadow-sm" asChild>
+                                                        <Link href={`/orders/${order.id}`}>Détails</Link>
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 </TabsContent>

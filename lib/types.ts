@@ -20,6 +20,7 @@ export interface User {
   email: string
   phone: string
   avatar: string
+  image?: string // Alias for avatar from NextAuth
   role: UserRole
   location: string
   bio: string
@@ -32,9 +33,13 @@ export interface User {
   reviewCount: number
   listingsCount: number
   joinedAt: string
+  createdAt?: string | Date // From NextAuth
   shopName?: string
   shopSlug?: string
   shopDescription?: string
+  shopBanner?: string
+  shopTheme?: "modern" | "minimal" | "vibrant" | "elegant"
+  commissionRate?: number
   subscription?: "basic" | "pro" | "vip"
 }
 

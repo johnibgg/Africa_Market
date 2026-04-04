@@ -252,6 +252,13 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
                         <Button variant="outline" className="w-full rounded-xl" asChild>
                           <Link href="/messages"><MessageSquare className="mr-2 h-4 w-4" />{t("listing.contact_seller")}</Link>
                         </Button>
+                        {seller.whatsapp && (
+                          <Button variant="outline" className="w-full rounded-xl border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300" asChild>
+                            <Link href={`https://wa.me/${seller.whatsapp.replace(/\D/g, '')}?text=Bonjour, je suis intéressé par votre annonce : ${listing.title}`} target="_blank">
+                              <MessageSquare className="mr-2 h-4 w-4" /> WhatsApp Business
+                            </Link>
+                          </Button>
+                        )}
                         {seller.shopSlug && (
                           <Button variant="default" className="w-full rounded-xl bg-teal-600 hover:bg-teal-700" asChild>
                             <Link href={`/boutique/${seller.shopSlug}`}>

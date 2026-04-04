@@ -48,7 +48,7 @@ export async function PATCH(req: Request) {
         }
 
         const body = await req.json()
-        const { name, shopName, shopSlug, shopDescription, bio, location, quartier, phone } = body
+        const { name, shopName, shopSlug, shopDescription, shopBanner, shopTheme, whatsapp, bio, location, quartier, phone, twoFactorEnabled } = body
 
         if (shopSlug) {
             const existing = await prisma.user.findFirst({
@@ -66,10 +66,14 @@ export async function PATCH(req: Request) {
                 shopName,
                 shopSlug: shopSlug || undefined,
                 shopDescription,
+                shopBanner,
+                shopTheme,
+                whatsapp,
                 bio,
                 location,
                 quartier,
                 phone,
+                twoFactorEnabled,
             }
         })
 

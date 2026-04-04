@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/lib/context/language-context"
 import { useEffect, useState } from "react"
+import { Skeleton } from "@/components/ui/skeleton"
 import React from "react"
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -54,12 +55,14 @@ const colorMap: Record<string, { bg: string; text: string; hover: string; ring: 
 export function CategoriesSection() {
   const { t, locale } = useLanguage()
   const [categories, setCategories] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     fetch("/api/categories")
       .then((r) => r.json())
       .then((data) => setCategories(Array.isArray(data) ? data : []))
       .catch(() => {})
+      .finally(() => setIsLoading(false))
   }, [])
 
   return (
@@ -79,29 +82,43 @@ export function CategoriesSection() {
 
         {/* Horizontal scroll on mobile, grid on desktop */}
         <div className="flex gap-3 overflow-x-auto pb-2 sm:pb-0 snap-x snap-mandatory sm:grid sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-6">
-          {categories.map((category) => {
-            const Icon = iconMap[category.icon]
-            const colors = colorMap[category.icon] ?? { bg: "bg-primary/10", text: "text-primary", hover: "group-hover:bg-primary", ring: "group-hover:ring-primary/20" }
-            return (
-              <Link
-                key={category.id}
-                href={`/search?category=${category.slug}`}
-                className="group flex-shrink-0 snap-start w-24 sm:w-auto flex flex-col items-center gap-3 rounded-2xl border border-transparent bg-white p-4 text-center transition-all hover:border-slate-200 hover:shadow-lg hover:-translate-y-1 active:scale-95"
-              >
-                <div className={`w-14 h-14 flex items-center justify-center rounded-2xl ring-4 ring-transparent transition-all ${colors.bg} ${colors.text} ${colors.hover} ${colors.ring} group-hover:text-white`}>
-                  {Icon && <Icon className="h-7 w-7 transition-transform group-hover:scale-110" />}
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-foreground leading-tight">
-                    {locale === "fr" ? category.nameFr : category.name}
-                  </p>
-                  <p className="mt-0.5 text-[10px] text-muted-foreground font-medium">
-                    {category.count}
-                  </p>
-                </div>
-              </Link>
-            )
-          })}
+          {isLoading ? (
+            [...Array(6)].map((_, i) => (
+              <div key={i} className="flex flex-col items-center gap-3 p-4">
+                <Skeleton className="h-14 w-14 rounded-2xl" />
+                <Skeleton className="h-3 w-16" />
+                <Skeleton className="h-2 w-8" />
+              </div>
+            ))
+          ) : categories.length === 0 ? (
+            <div className="col-span-full py-8 text-center text-muted-foreground">
+              Aucune catégorie trouvée
+            </div>
+          ) : (
+            categories.map((category) => {
+              const Icon = iconMap[category.icon]
+              const colors = colorMap[category.icon] ?? { bg: "bg-primary/10", text: "text-primary", hover: "group-hover:bg-primary", ring: "group-hover:ring-primary/20" }
+              return (
+                <Link
+                  key={category.id}
+                  href={`/search?category=${category.slug}`}
+                  className="group flex-shrink-0 snap-start w-24 sm:w-auto flex flex-col items-center gap-3 rounded-2xl border border-transparent bg-white p-4 text-center transition-all hover:border-slate-200 hover:shadow-lg hover:-translate-y-1 active:scale-95"
+                >
+                  <div className={`w-14 h-14 flex items-center justify-center rounded-2xl ring-4 ring-transparent transition-all ${colors.bg} ${colors.text} ${colors.hover} ${colors.ring} group-hover:text-white`}>
+                    {Icon && <Icon className="h-7 w-7 transition-transform group-hover:scale-110" />}
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-foreground leading-tight">
+                      {locale === "fr" ? category.nameFr : category.name}
+                    </p>
+                    <p className="mt-0.5 text-[10px] text-muted-foreground font-medium">
+                      {category.count}
+                    </p>
+                  </div>
+                </Link>
+              )
+            })
+          )}
         </div>
       </div>
     </section>

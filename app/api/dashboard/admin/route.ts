@@ -19,7 +19,7 @@ export async function GET() {
 
         const totalRevenue = await prisma.order.aggregate({
             where: { status: "DELIVERED" },
-            _sum: { total: true }
+            _sum: { total: true, commissionAmount: true }
         })
 
         // New users today
@@ -51,6 +51,14 @@ export async function GET() {
         const pendingModerationCount = await prisma.listing.count({
             where: { status: "PENDING" }
         })
+        
+        // Fetch withdrawals
+        const withdrawals = await prisma.withdrawal.findMany({
+            include: { user: { select: { name: true, email: true } } },
+            orderBy: { createdAt: "desc" },
+            take: 20
+        })
+
         // Mocking disputes since we don't have a Dispute model yet
         const disputesCount = 3
 
@@ -60,6 +68,7 @@ export async function GET() {
                 totalListings: listingsCount,
                 totalOrders: ordersCount,
                 totalRevenue: totalRevenue._sum.total || 0,
+                totalCommission: totalRevenue._sum.commissionAmount || 0,
                 newUsersToday,
                 newListingsToday,
                 pendingModeration: pendingModerationCount,
@@ -67,6 +76,7 @@ export async function GET() {
                 openDisputes: disputesCount
             },
             users,
+            withdrawals,
             // Add monthly data mock for charts since we don't have historical aggregation yet
             monthlyData: [
                 { month: "Jan", users: 400, listings: 240, revenue: 2400 },

@@ -47,7 +47,11 @@ export function ListingCard({ listing, variant = "grid", className }: ListingCar
                   <Badge variant="secondary" className="text-xs">
                     {listing.type === "PRODUCT" ? t("search.type_product") : t("search.type_service")}
                   </Badge>
-                  <span className="text-xs text-muted-foreground">{listing.category}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {typeof listing.category === "string" 
+                      ? listing.category 
+                      : (useLanguage().locale === "fr" ? (listing.category as any).nameFr : (listing.category as any).name)}
+                  </span>
                 </div>
                 <h3 className="font-semibold text-foreground line-clamp-1 text-balance">
                   {listing.title}
@@ -127,7 +131,11 @@ export function ListingCard({ listing, variant = "grid", className }: ListingCar
       {/* Content */}
       <CardContent className="p-4 flex flex-col flex-1">
         <div className="mb-1">
-          <span className="text-xs font-medium text-primary/80 uppercase tracking-wide">{listing.category}</span>
+          <span className="text-xs font-medium text-primary/80 uppercase tracking-wide">
+            {typeof listing.category === "string" 
+              ? listing.category 
+              : (useLanguage().locale === "fr" ? (listing.category as any).nameFr : (listing.category as any).name)}
+          </span>
         </div>
         <h3 className="font-bold text-foreground line-clamp-2 text-balance leading-snug text-sm flex-1">
           {listing.title}

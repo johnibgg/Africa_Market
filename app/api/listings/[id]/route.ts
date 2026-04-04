@@ -19,6 +19,8 @@ export async function GET(
                         image: true,
                         isVerified: true,
                         location: true,
+                        phone: true,
+                        whatsapp: true,
                         bio: true,
                         joinedAt: true,
                         _count: { select: { listings: true, followers: true } }

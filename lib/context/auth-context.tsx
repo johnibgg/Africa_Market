@@ -17,7 +17,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { data: session, status } = useSession()
-  const user = session?.user as User | null
+  const user = session?.user ? (session.user as unknown as User) : null
   const isLoading = status === "loading"
 
   const login = useCallback(async (credentials: any) => {

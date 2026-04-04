@@ -4,7 +4,8 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
-import { ChevronLeft, MapPin, CreditCard, Smartphone, Banknote, ShieldCheck, CheckCircle2 } from "lucide-react"
+import { ChevronLeft, MapPin, CreditCard, Smartphone, Banknote, ShieldCheck, CheckCircle2, ShoppingBag } from "lucide-react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -76,9 +77,61 @@ export default function CheckoutPage() {
     )
   }
 
+  const [loading, setLoading] = useState(false)
+
+  const handleConfirmOrder = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: items.map(item => ({
+            listingId: item.listing.id,
+            quantity: item.quantity,
+            price: item.listing.price,
+          })),
+          total: total,
+          deliveryFee: deliveryFee,
+          address: deliveryInfo.address + ", " + deliveryInfo.city,
+          paymentMethod: paymentMethod,
+        })
+      })
+
+      if (res.ok) {
+        toast.success(t("checkout.success_message") || "Commande confirmée !")
+        clearCart()
+        setStep("confirmation")
+      } else {
+        const data = await res.json()
+        toast.error(data.message || "Erreur lors de la confirmation")
+      }
+    } catch (err) {
+      console.error(err)
+      toast.error("Erreur réseau")
+    } finally {
+      setLoading(false)
+    }
+  }
+
   if (items.length === 0) {
-    router.push("/cart")
-    return null
+    return (
+      <div className="flex min-h-screen flex-col">
+        <Header />
+        <main className="flex-1 flex flex-col items-center justify-center p-4">
+          <div className="text-center space-y-4">
+            <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto">
+              <ShoppingBag className="w-10 h-10 text-slate-300" />
+            </div>
+            <h1 className="text-2xl font-bold">{t("cart.empty")}</h1>
+            <Button asChild className="rounded-xl">
+              <Link href="/search">{t("cart.back_to_shop")}</Link>
+            </Button>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    )
   }
 
   return (
@@ -246,12 +299,10 @@ export default function CheckoutPage() {
                         {t("common.back")}
                       </Button>
                       <Button
-                        onClick={() => {
-                          clearCart()
-                          setStep("confirmation")
-                        }}
+                        onClick={handleConfirmOrder}
+                        disabled={loading}
                       >
-                        {t("checkout.confirm_order")} - {formatPrice(grandTotal)}
+                        {loading ? t("common.loading") : t("checkout.confirm_order")} - {formatPrice(grandTotal)}
                       </Button>
                     </div>
                   </CardContent>

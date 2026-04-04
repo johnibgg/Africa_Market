@@ -33,10 +33,29 @@ enum AdType {
   WANTED
 }
 
+model Withdrawal {
+  id              String           @id @default(cuid())
+  userId          String
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount          Float
+  method          String           // Mobile Money, Bank, etc.
+  phone           String?          // For Mobile Money
+  bankInfo        String?          // For Bank transfers
+  status          WithdrawalStatus @default(PENDING)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+enum WithdrawalStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  REJECTED
+}
+
 enum OrderStatus {
   PENDING
   CONFIRMED
-  PROCESSING
   SHIPPED
   DELIVERED
   CANCELLED
@@ -61,13 +80,24 @@ model User {
   location           String?
   quartier           String?
   phone              String?
+  whatsapp           String?
   bio                String?
   isVerified         Boolean            @default(false)
   verificationStatus VerificationStatus @default(NONE)
+
+  // 2FA
+  twoFactorEnabled   Boolean            @default(false)
+  twoFactorConfirmation TwoFactorConfirmation?
   shopName           String?
   shopSlug           String?            @unique
   shopDescription    String?
+  shopBanner         String?
+  shopTheme          String?            @default("modern") // modern, minimal, vibrant, elegant
+  commissionRate     Float?             @default(0.05) // 5% default
+  balance            Float              @default(0) // Available for withdrawal
   joinedAt           DateTime           @default(now())
+  
+  withdrawals        Withdrawal[]
 
   // Relationships
   listings           Listing[]
@@ -142,12 +172,13 @@ model Review {
 }
 
 model Order {
-  id             String      @id @default(cuid())
-  status         OrderStatus @default(PENDING)
-  total          Float
-  paymentMethod  String
+  id              String      @id @default(cuid())
+  status          OrderStatus @default(PENDING)
+  total           Float
+  commissionAmount Float?      @default(0) // Platform fee (developer share)
+  paymentMethod   String
   deliveryAddress String
-  trackingNumber String?
+  trackingNumber  String?
   
   buyer          User        @relation("BuyerOrders", fields: [buyerId], references: [id])
   buyerId        String
@@ -232,4 +263,19 @@ model VerificationToken {
   expires DateTime
 
   @@unique([email, token])
+}
+
+model TwoFactorToken {
+  id      String   @id @default(cuid())
+  email   String
+  token   String   @unique
+  expires DateTime
+
+  @@unique([email, token])
+}
+
+model TwoFactorConfirmation {
+  id      String   @id @default(cuid())
+  userId  String   @unique
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
