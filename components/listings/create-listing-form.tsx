@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { MediaUpload } from "./media-upload"
-import { Check, ChevronRight, ChevronLeft, Package, Briefcase, Search, Upload, Info, ShieldAlert, Store } from "lucide-react"
+import { Check, ChevronRight, ChevronLeft, Package, Briefcase, Search, Upload, Info, ShieldAlert, Store, Sparkles, Wand2, Loader2 } from "lucide-react"
 import { useAuth } from "@/lib/context/auth-context"
 import { toast } from "sonner"
 
@@ -26,6 +26,10 @@ export function CreateListingForm() {
     const [upgrading, setUpgrading] = useState(false)
     const [categories, setCategories] = useState<any[]>([])
     const { user, isAuthenticated } = useAuth()
+
+    // --- IA vendeur ---
+    const [aiBrief, setAiBrief] = useState("")
+    const [aiBusy, setAiBusy] = useState(false)
 
     const [formData, setFormData] = useState({
         title: "",
@@ -59,6 +63,71 @@ export function CreateListingForm() {
 
     const handleMediaChange = (media: { images: File[], videos: File[] }) => {
         setFormData(prev => ({ ...prev, images: media.images, videos: media.videos }))
+    }
+
+    // --- IA : génère titre + description + prix conseillé à partir d'un brief court ---
+    const handleAiGenerate = async () => {
+        const brief = aiBrief.trim() || formData.title.trim() || formData.description.trim()
+        if (!brief) {
+            toast.info("Décris ton produit/service en quelques mots pour que l'IA t'aide.")
+            return
+        }
+        setAiBusy(true)
+        try {
+            const catName = categories.find((c) => c.id === formData.categoryId)?.nameFr || formData.customCategory || ""
+            const res = await fetch("/api/ai", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ task: "listing", brief, category: catName }),
+            })
+            const data = await res.json()
+            if (!res.ok) {
+                toast.error(data.error || "L'IA n'a pas pu générer l'annonce.")
+                return
+            }
+            setFormData((f) => ({
+                ...f,
+                title: data.title || f.title,
+                description: data.description || f.description,
+                price: data.suggestedPrice ? String(data.suggestedPrice) : f.price,
+            }))
+            toast.success("Annonce générée par l'IA. Vérifie et ajuste si besoin ✨")
+            if (data.tips) toast.info("Conseil IA : " + data.tips, { duration: 6000 })
+        } catch {
+            toast.error("Connexion à l'IA impossible. Réessaie.")
+        } finally {
+            setAiBusy(false)
+        }
+    }
+
+    // --- IA : modération / anti-arnaque avant publication (ne bloque qu'en cas de risque élevé) ---
+    const moderate = async (): Promise<boolean> => {
+        try {
+            const res = await fetch("/api/ai", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    task: "moderate",
+                    title: formData.title,
+                    description: formData.description,
+                    price: parseFloat(formData.price) || 0,
+                }),
+            })
+            if (!res.ok) return true // en cas d'erreur IA, ne bloque pas la publication
+            const data = await res.json()
+            if (data.allowed === false || data.risk === "high") {
+                const reason = Array.isArray(data.reasons) && data.reasons.length ? data.reasons.join(" · ") : "Contenu à risque détecté."
+                toast.error("Publication bloquée : " + reason, { duration: 8000 })
+                if (data.suggestion) toast.info("Suggestion : " + data.suggestion, { duration: 8000 })
+                return false
+            }
+            if (data.risk === "medium" && Array.isArray(data.reasons) && data.reasons.length) {
+                toast.warning("À vérifier : " + data.reasons.join(" · "), { duration: 6000 })
+            }
+            return true
+        } catch {
+            return true // réseau IA indisponible → on laisse publier
+        }
     }
 
     // --- ROLE & VERIFICATION CHECK ---
@@ -198,6 +267,13 @@ export function CreateListingForm() {
 
         setLoading(true)
         try {
+            // --- MODÉRATION IA (anti-arnaque) avant publication ---
+            const ok = await moderate()
+            if (!ok) {
+                setLoading(false)
+                return
+            }
+
             // --- IMAGE UPLOAD SIMULATION ---
             // Dans une vraie app, on utiliserait Cloudinary, UploadThing ou S3 ici
             // Ex: const uploadedImages = await Promise.all(formData.images.map(uploadFile))
@@ -387,6 +463,37 @@ export function CreateListingForm() {
 
                     {step === 3 && (
                         <div className="space-y-6">
+                            {/* --- Assistant vendeur IA --- */}
+                            <div className="rounded-2xl border border-teal-200 bg-gradient-to-br from-teal-50 to-white p-4 space-y-3">
+                                <div className="flex items-center gap-2">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-600 text-white">
+                                        <Sparkles className="h-4 w-4" />
+                                    </div>
+                                    <div>
+                                        <div className="text-sm font-bold text-teal-900">Assistant IA</div>
+                                        <div className="text-[11px] text-teal-700/80">Décris ton article, l&rsquo;IA rédige le titre, la description et propose un prix.</div>
+                                    </div>
+                                </div>
+                                <div className="flex flex-col gap-2 sm:flex-row">
+                                    <Input
+                                        placeholder="Ex: robe pagne wax taille M, neuve, faite à Cotonou"
+                                        className="h-11 flex-1 rounded-xl border-2"
+                                        value={aiBrief}
+                                        onChange={(e) => setAiBrief(e.target.value)}
+                                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAiGenerate() } }}
+                                    />
+                                    <Button
+                                        type="button"
+                                        onClick={handleAiGenerate}
+                                        disabled={aiBusy}
+                                        className="h-11 rounded-xl bg-teal-600 hover:bg-teal-700 font-bold text-white shadow-lg shadow-teal-600/20 sm:w-auto"
+                                    >
+                                        {aiBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                                        {aiBusy ? "Génération…" : "Générer"}
+                                    </Button>
+                                </div>
+                            </div>
+
                             <div className="space-y-2">
                                 <Label htmlFor="title">Titre de l&rsquo;annonce *</Label>
                                 <Input
