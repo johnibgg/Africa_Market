@@ -6,6 +6,7 @@ import { AuthProvider } from '@/lib/context/auth-context'
 import { SessionProvider } from 'next-auth/react'
 import { BottomNav } from '@/components/layout/bottom-nav'
 import { InteractiveTutorial } from '@/components/ui/interactive-tutorial'
+import { Chatbot } from '@/components/ai/chatbot'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -44,6 +45,7 @@ export default function RootLayout({
                 {children}
                 <BottomNav />
                 <InteractiveTutorial />
+                <Chatbot />
               </LanguageProvider>
             </CartProvider>
           </AuthProvider>
