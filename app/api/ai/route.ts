@@ -51,7 +51,7 @@ async function findListings(query: string) {
   try {
     const rows = await prisma.listing.findMany({
       where: {
-        status: "active",
+        status: "ACTIVE",
         OR: kw.flatMap((k) => [
           { title: { contains: k, mode: "insensitive" as const } },
           { description: { contains: k, mode: "insensitive" as const } },
