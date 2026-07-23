@@ -19,6 +19,22 @@ const STEPS = [
     { id: 3, title: "Détails", icon: Info },
 ]
 
+// Principales villes du Bénin (liste déroulante)
+const BENIN_CITIES = [
+    "Cotonou", "Abomey-Calavi", "Porto-Novo", "Parakou", "Djougou", "Bohicon",
+    "Natitingou", "Ouidah", "Abomey", "Lokossa", "Kandi", "Savè", "Malanville",
+    "Comè", "Dassa-Zoumè", "Aplahoué", "Nikki", "Pobè", "Sakété", "Allada",
+    "Grand-Popo", "Tanguiéta", "Bassila", "Kétou", "Dogbo",
+]
+
+// Quartiers connus par ville (liste déroulante quand disponible, sinon saisie libre)
+const QUARTIERS_BY_CITY: Record<string, string[]> = {
+    "Cotonou": ["Akpakpa", "Cadjèhoun", "Fidjrossè", "Gbégamey", "Ganhi", "Jéricho", "Sègbèya", "Vodjè", "Zongo", "Agla", "Aïbatin", "Sainte-Rita", "Vèdoko", "Ste-Cécile", "Menontin"],
+    "Abomey-Calavi": ["Calavi Centre", "Godomey", "Akassato", "Zopah", "Hêvié", "Togba", "Ouèdo", "Kpanroun", "Cocotomey"],
+    "Porto-Novo": ["Ouando", "Djègan-Kpèvi", "Houinmè", "Attakè", "Dowa", "Tokpota", "Louho"],
+    "Parakou": ["Zongo", "Ladji Farani", "Banikanni", "Titirou", "Guéma", "Wansirou", "Albarika"],
+}
+
 export function CreateListingForm() {
     const router = useRouter()
     const [step, setStep] = useState(1)
@@ -30,6 +46,10 @@ export function CreateListingForm() {
     // --- IA vendeur ---
     const [aiBrief, setAiBrief] = useState("")
     const [aiBusy, setAiBusy] = useState(false)
+
+    // --- Ville / quartier : bascule vers saisie libre ("Autre") ---
+    const [otherCity, setOtherCity] = useState(false)
+    const [otherQuartier, setOtherQuartier] = useState(false)
 
     const [formData, setFormData] = useState({
         title: "",
@@ -530,14 +550,104 @@ export function CreateListingForm() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="location">Ville</Label>
-                                    <Input
-                                        id="location"
-                                        placeholder="Cotonou"
-                                        className="h-12 rounded-xl border-2"
-                                        value={formData.location}
-                                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                                    />
+                                    {!otherCity ? (
+                                        <Select
+                                            value={BENIN_CITIES.includes(formData.location) ? formData.location : ""}
+                                            onValueChange={(val) => {
+                                                if (val === "__other__") {
+                                                    setOtherCity(true)
+                                                    setOtherQuartier(false)
+                                                    setFormData((f) => ({ ...f, location: "", quartier: "" }))
+                                                } else {
+                                                    setOtherQuartier(false)
+                                                    setFormData((f) => ({ ...f, location: val, quartier: "" }))
+                                                }
+                                            }}
+                                        >
+                                            <SelectTrigger className="h-12 rounded-xl border-2 focus-visible:ring-teal-500">
+                                                <SelectValue placeholder="Choisir une ville" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {BENIN_CITIES.map((c) => (
+                                                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                                                ))}
+                                                <SelectItem value="__other__">Autre ville…</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    ) : (
+                                        <div className="flex gap-2">
+                                            <Input
+                                                id="location"
+                                                autoFocus
+                                                placeholder="Nom de la ville"
+                                                className="h-12 rounded-xl border-2"
+                                                value={formData.location}
+                                                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                                            />
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                className="h-12 rounded-xl border-2 shrink-0"
+                                                onClick={() => {
+                                                    setOtherCity(false)
+                                                    setFormData((f) => ({ ...f, location: "Cotonou", quartier: "" }))
+                                                }}
+                                            >
+                                                Liste
+                                            </Button>
+                                        </div>
+                                    )}
                                 </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="quartier">Quartier</Label>
+                                {QUARTIERS_BY_CITY[formData.location] && !otherQuartier ? (
+                                    <Select
+                                        value={QUARTIERS_BY_CITY[formData.location].includes(formData.quartier) ? formData.quartier : ""}
+                                        onValueChange={(val) => {
+                                            if (val === "__other__") {
+                                                setOtherQuartier(true)
+                                                setFormData((f) => ({ ...f, quartier: "" }))
+                                            } else {
+                                                setFormData((f) => ({ ...f, quartier: val }))
+                                            }
+                                        }}
+                                    >
+                                        <SelectTrigger className="h-12 rounded-xl border-2 focus-visible:ring-teal-500">
+                                            <SelectValue placeholder="Choisir un quartier (optionnel)" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {QUARTIERS_BY_CITY[formData.location].map((q) => (
+                                                <SelectItem key={q} value={q}>{q}</SelectItem>
+                                            ))}
+                                            <SelectItem value="__other__">Autre quartier…</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                ) : (
+                                    <div className="flex gap-2">
+                                        <Input
+                                            id="quartier"
+                                            placeholder="Ex: Akpakpa (optionnel)"
+                                            className="h-12 rounded-xl border-2"
+                                            value={formData.quartier}
+                                            onChange={(e) => setFormData({ ...formData, quartier: e.target.value })}
+                                        />
+                                        {QUARTIERS_BY_CITY[formData.location] && (
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                className="h-12 rounded-xl border-2 shrink-0"
+                                                onClick={() => {
+                                                    setOtherQuartier(false)
+                                                    setFormData((f) => ({ ...f, quartier: "" }))
+                                                }}
+                                            >
+                                                Liste
+                                            </Button>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
