@@ -206,7 +206,7 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
                     <div className="mt-6 flex flex-col gap-2">
                       {listing.type === "SERVICE" ? (
                         <Button size="lg" className="w-full bg-teal-600 hover:bg-teal-700 rounded-xl" asChild>
-                          <Link href="/messages"><MessageSquare className="mr-2 h-4 w-4" />Demander un devis</Link>
+                          <Link href={seller?.id ? `/messages?user=${seller.id}&name=${encodeURIComponent(seller.name || "Vendeur")}` : "/messages"}><MessageSquare className="mr-2 h-4 w-4" />Demander un devis</Link>
                         </Button>
                       ) : (
                         <>
@@ -250,7 +250,7 @@ export default function ListingDetailPage({ params }: { params: Promise<{ id: st
                       </div>
                       <div className="flex flex-col gap-2 mt-4">
                         <Button variant="outline" className="w-full rounded-xl" asChild>
-                          <Link href="/messages"><MessageSquare className="mr-2 h-4 w-4" />{t("listing.contact_seller")}</Link>
+                          <Link href={`/messages?user=${seller.id}&name=${encodeURIComponent(seller.name || "Vendeur")}`}><MessageSquare className="mr-2 h-4 w-4" />{t("listing.contact_seller")}</Link>
                         </Button>
                         {seller.whatsapp && (
                           <Button variant="outline" className="w-full rounded-xl border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300" asChild>
