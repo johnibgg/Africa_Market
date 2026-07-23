@@ -18,10 +18,36 @@ export default function MessagesPage() {
     useEffect(() => {
         const fetchConversations = async () => {
             try {
+                // Cible éventuelle : arrivée depuis "Contacter le vendeur" (/messages?user=ID&name=Nom)
+                const params = new URLSearchParams(window.location.search)
+                const targetUser = params.get("user")
+                const targetName = params.get("name")
+
                 const res = await fetch("/api/conversations")
+                let safeData: Conversation[] = []
                 if (res.ok) {
                     const data = await res.json()
-                    const safeData = Array.isArray(data) ? data : []
+                    safeData = Array.isArray(data) ? data : []
+                }
+
+                if (targetUser && currentUser && targetUser !== currentUser.id) {
+                    // Ouvre la conversation existante, ou en crée une nouvelle (vide) prête à l'emploi
+                    const existing = safeData.find(c => c.id === targetUser)
+                    if (!existing) {
+                        const draft = {
+                            id: targetUser,
+                            participants: [
+                                { id: currentUser.id, name: currentUser.name || "Moi", avatar: (currentUser as any).image },
+                                { id: targetUser, name: targetName || "Vendeur", avatar: undefined },
+                            ],
+                            lastMessage: { content: "Démarrez la conversation…", timestamp: new Date().toISOString() },
+                            unreadCount: 0,
+                        } as unknown as Conversation
+                        safeData = [draft, ...safeData]
+                    }
+                    setConversations(safeData)
+                    setActiveConversationId(targetUser)
+                } else {
                     setConversations(safeData)
                     if (safeData.length > 0 && !activeConversationId) {
                         setActiveConversationId(safeData[0].id)
@@ -37,7 +63,7 @@ export default function MessagesPage() {
         if (isAuthenticated) {
             fetchConversations()
         }
-    }, [isAuthenticated])
+    }, [isAuthenticated, currentUser])
 
     // Fetch messages for active conversation
     useEffect(() => {
